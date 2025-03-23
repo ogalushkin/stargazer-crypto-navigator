@@ -145,7 +145,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ![Home](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-home.png)
 
 ### Address Details
-![Address Details](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-address.png)
+![Address Details](https://github.com/ogalushkin/stargazer-crypto-navigator/raw/main/public/screenshot-address.png)
 
 ### Transaction Graph
 ![Transaction Graph](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-graph.png)
