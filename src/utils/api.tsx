@@ -11,11 +11,13 @@ export const fetchAddressData = async (
   network: NetworkType
 ): Promise<AddressData> => {
   try {
+    console.log(`Fetching data for ${network} address: ${address}`);
     // Call the appropriate API based on network
     return await fetchRealData(address, network);
   } catch (error) {
     console.error(`Error fetching real data for ${network}:`, error);
     // Fall back to mock data on error
+    console.log(`Falling back to mock data for ${address}`);
     return generateMockData(address, network);
   }
 };
@@ -44,6 +46,7 @@ const fetchRealData = async (
         // you would parse the real API response
         return generateMockData(address, network);
       }
+      console.log('Etherscan API error:', ethData);
       throw new Error(`Etherscan API error: ${ethData.message}`);
       
     case 'bitcoin':
@@ -163,9 +166,12 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
     );
   }
   
-  // Generate mock transactions
+  // Generate more transactions for the Arkham-like visualization
   const transactions: Transaction[] = [];
-  const txCount = Math.floor(random(10, 20));
+  // Increase transaction count to create a more dense, realistic graph
+  const txCount = Math.floor(random(25, 50));
+  
+  console.log(`Generating ${txCount} mock transactions for ${address}`);
   
   for (let i = 0; i < txCount; i++) {
     const isIncoming = random(0, 1) > 0.5;

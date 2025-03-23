@@ -50,8 +50,15 @@ const TransactionGraphPage = () => {
         
         // Fetch address data
         const data = await fetchAddressData(address, network as NetworkType);
-        setTransactions(data.transactions);
-        setIsAddressValid(true);
+        
+        // Important: Make sure we're setting the transactions correctly
+        if (data && Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+          setIsAddressValid(true);
+        } else {
+          console.error('Invalid transaction data format:', data);
+          toast.error('Failed to load transaction data: invalid format');
+        }
       } catch (error) {
         console.error('Error fetching transaction data:', error);
         toast.error('Failed to fetch transaction data');
@@ -102,12 +109,14 @@ const TransactionGraphPage = () => {
               <p className="text-white/70">Loading transaction data...</p>
             </div>
           ) : (
-            <TransactionGraph 
-              address={address}
-              network={network}
-              transactions={transactions}
-              fullPage={true}
-            />
+            <div className="w-full h-[calc(100vh-140px)] bg-black">
+              <TransactionGraph 
+                address={address}
+                network={network as NetworkType}
+                transactions={transactions}
+                fullPage={true}
+              />
+            </div>
           )}
         </main>
       </div>

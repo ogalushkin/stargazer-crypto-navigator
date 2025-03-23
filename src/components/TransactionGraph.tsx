@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -61,14 +62,14 @@ interface TransactionGraphProps {
 // Max number of transactions to display to prevent performance issues
 const MAX_TRANSACTIONS = 100;
 
-// Arkham-inspired colors
+// Arkham-style colors - bright green for incoming, bright red/pink for outgoing
 const INCOMING_COLOR = '#00FF41'; // Bright green
 const OUTGOING_COLOR = '#FF3864'; // Bright red/pink
 
 const TransactionGraph: React.FC<TransactionGraphProps> = ({
   address,
   network,
-  transactions,
+  transactions = [],
   isLoading = false,
   fullPage = false
 }) => {
@@ -77,12 +78,21 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   const navigate = useNavigate();
   const [isRendering, setIsRendering] = useState(false);
 
+  console.log("TransactionGraph component rendering with:", {
+    address,
+    network,
+    transactionsCount: transactions.length,
+    fullPage
+  });
+
   // Process transactions into nodes and edges
   const processGraphData = () => {
     // Limit transactions to prevent performance issues
     const limitedTransactions = transactions.length > MAX_TRANSACTIONS 
       ? transactions.slice(0, MAX_TRANSACTIONS)
       : transactions;
+    
+    console.log("Processing graph data with transactions:", limitedTransactions.length);
     
     const nodes: GraphNode[] = [{ id: address, label: shortenAddress(address), isTarget: true }];
     const edges: GraphEdge[] = [];
@@ -118,13 +128,14 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     
     // Second pass: create all individual edges (one per transaction)
     limitedTransactions.forEach((tx, index) => {
-      // Convert transaction value to number
-      const numValue = parseFloat(tx.value) || 0;
+      // Extract numerical value from transaction
+      const valueStr = tx.value.split(' ')[0]; // Extracts just the number part
+      const numValue = parseFloat(valueStr) || 0;
       
       // Add individual edge for this transaction
       const isIncoming = tx.to === address;
       edges.push({
-        id: `e${tx.hash.substring(0, 8)}${index}`,
+        id: `e${index}-${tx.hash.substring(0, 8)}`,
         source: tx.from,
         target: tx.to,
         label: tx.value,
@@ -133,6 +144,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
       });
     });
 
+    console.log("Processed graph data:", { nodes: nodes.length, edges: edges.length });
     return { nodes, edges };
   };
 
@@ -172,20 +184,34 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     
     // Logarithmic scaling with a multiplier of 2.0 (can be adjusted)
     // Using Math.log10 to get better scaling for crypto transaction values
-    const width = Math.log10(value + 1) * 2.0;
+    const width = Math.log10(value + 1) * 2.5; // Increased multiplier for visibility
     
     // Clamp between min 1px and max 10px
     return Math.min(Math.max(width, 1), 10);
   };
 
   useEffect(() => {
-    if (!containerRef.current || isLoading || transactions.length === 0) return;
+    if (!containerRef.current || isLoading || !transactions || transactions.length === 0) {
+      console.log("Skipping graph initialization:", { 
+        hasContainer: !!containerRef.current, 
+        isLoading, 
+        transactionsLength: transactions?.length 
+      });
+      return;
+    }
 
+    console.log("Initializing graph with transactions:", transactions.length);
     setIsRendering(true);
     
     const { nodes, edges } = processGraphData();
 
     try {
+      // Clean up previous instance if it exists
+      if (cyRef.current) {
+        cyRef.current.destroy();
+        cyRef.current = null;
+      }
+
       // Initialize cytoscape with a layout that immediately positions nodes
       const cy = cytoscape({
         container: containerRef.current,
@@ -415,6 +441,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
       // Fit to container after layout completes
       cy.on('layoutstop', function() {
         cy.fit(undefined, 50);
+        console.log("Layout completed and fitted to view");
       });
 
       // Add click event to nodes for navigation
@@ -425,19 +452,26 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
 
       // Set cursor style when hovering over nodes
       cy.on('mouseover', 'node', function() {
-        containerRef.current!.style.cursor = 'pointer';
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'pointer';
+        }
       });
       
       cy.on('mouseout', 'node', function() {
-        containerRef.current!.style.cursor = 'default';
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'default';
+        }
       });
 
       // Set cursor style when hovering over edges
       cy.on('mouseover', 'edge', function() {
-        containerRef.current!.style.cursor = 'default';
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'default';
+        }
       });
 
       cyRef.current = cy;
+      console.log("Cytoscape graph initialized successfully");
     } catch (e) {
       console.error("Error initializing cytoscape:", e);
     } finally {
@@ -446,6 +480,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
 
     return () => {
       if (cyRef.current) {
+        console.log("Cleaning up cytoscape instance");
         cyRef.current.destroy();
         cyRef.current = null;
       }
@@ -470,7 +505,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   }
 
   // Show empty state if no transactions
-  if (transactions.length === 0) {
+  if (!transactions || transactions.length === 0) {
     return (
       <Card className={`bg-stargazer-card border-stargazer-muted/40 ${fullPage ? 'w-full h-[calc(100vh-80px)]' : 'h-[500px]'}`}>
         <CardHeader className="pb-3">
