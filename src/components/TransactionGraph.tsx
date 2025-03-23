@@ -58,7 +58,7 @@ interface TransactionGraphProps {
 }
 
 // Max number of transactions to display to prevent performance issues
-const MAX_TRANSACTIONS = 20;
+const MAX_TRANSACTIONS = 100;
 
 const TransactionGraph: React.FC<TransactionGraphProps> = ({
   address,
@@ -82,48 +82,43 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const edges: GraphEdge[] = [];
     const nodeSet = new Set<string>([address]);
     
-    const incomingNodes = new Set<string>();
-    const outgoingNodes = new Set<string>();
-
-    // First pass: identify incoming and outgoing nodes
+    // First pass: identify all nodes
     limitedTransactions.forEach(tx => {
-      if (tx.to === address) {
-        incomingNodes.add(tx.from);
-      } else if (tx.from === address) {
-        outgoingNodes.add(tx.to);
-      }
-    });
-
-    // Second pass: create nodes with proper type
-    limitedTransactions.forEach((tx, index) => {
-      // Add nodes if they don't exist
+      const fromIsTarget = tx.from === address;
+      const toIsTarget = tx.to === address;
+      
+      // Add 'from' node if it doesn't exist
       if (!nodeSet.has(tx.from)) {
         nodes.push({ 
           id: tx.from, 
           label: shortenAddress(tx.from),
-          isIncoming: tx.to === address,
-          isOutgoing: tx.from === address
+          isOutgoing: fromIsTarget,
+          isIncoming: !fromIsTarget && toIsTarget
         });
         nodeSet.add(tx.from);
       }
       
+      // Add 'to' node if it doesn't exist
       if (!nodeSet.has(tx.to)) {
         nodes.push({ 
           id: tx.to, 
           label: shortenAddress(tx.to),
-          isIncoming: tx.to === address,
-          isOutgoing: tx.from === address
+          isOutgoing: toIsTarget && !fromIsTarget,
+          isIncoming: toIsTarget
         });
         nodeSet.add(tx.to);
       }
-      
+    });
+    
+    // Second pass: create all individual edges (one per transaction)
+    limitedTransactions.forEach((tx, index) => {
       // Convert transaction value to number
       const numValue = parseFloat(tx.value) || 0;
       
-      // Add edge
+      // Add individual edge for this transaction
       const isIncoming = tx.to === address;
       edges.push({
-        id: `e${index}`,
+        id: `e${tx.hash.substring(0, 8)}${index}`,
         source: tx.from,
         target: tx.to,
         label: tx.value,
@@ -166,26 +161,15 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   };
 
   // Calculate edge width based on transaction value using logarithmic scale
-  const calculateEdgeWidth = (value: number, edges: GraphEdge[]): number => {
+  const calculateEdgeWidth = (value: number): number => {
     if (value <= 0) return 1;
     
-    // Get min and max values (excluding zero values)
-    const values = edges.map(e => e.value).filter(v => v > 0);
-    const minValue = Math.min(...values);
-    const maxValue = Math.max(...values);
+    // Logarithmic scaling with a multiplier of 2.0 (can be adjusted)
+    // Using Math.log10 to get better scaling for crypto transaction values
+    const width = Math.log10(value + 1) * 2.0;
     
-    // Use logarithmic scaling for better visualization
-    // Map to range 1.5px - 8px for better visibility
-    if (minValue === maxValue) return 3; // Default midpoint if all values are the same
-    
-    // Logarithmic scaling - better for crypto values with high variability
-    const logMin = Math.log(Math.max(0.000001, minValue));
-    const logMax = Math.log(maxValue);
-    const logValue = Math.log(Math.max(0.000001, value));
-    
-    // Scale to 1.5-8px range
-    const normalizedValue = (logValue - logMin) / (logMax - logMin);
-    return 1.5 + normalizedValue * 6.5; // Scale to range 1.5-8px
+    // Clamp between min 1px and max 10px
+    return Math.min(Math.max(width, 1), 10);
   };
 
   useEffect(() => {
@@ -222,7 +206,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               target: edge.target, 
               label: edge.label,
               value: edge.value,
-              width: calculateEdgeWidth(edge.value, edges),
+              width: calculateEdgeWidth(edge.value),
               isIncoming: edge.isIncoming || false
             }
           }))
@@ -266,14 +250,6 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             } as cytoscape.Css.Node
           },
           {
-            // Add shadow effect to target node using class instead
-            selector: 'node[isTarget]',
-            style: {
-              'text-background-color': '#4C1D95',
-              'z-index': 10 // Ensure target node is on top
-            } as cytoscape.Css.Node
-          },
-          {
             selector: 'edge',
             style: {
               'width': 'data(width)',
@@ -281,7 +257,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'target-arrow-color': '#D946EF',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'label': '',                    // No labels on edges
+              'control-point-step-size': 40, // Add spacing between parallel edges
+              'control-point-weight': 0.5,   // Control bezier curve
+              'label': '',                   // No labels on edges by default
               'font-size': '8px',
               'color': '#E2E8F0',
               'text-background-color': '#1A1A25',
@@ -323,15 +301,20 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // Apply CSS classes to add shadow effects after creation
-      cy.style()
-        .selector('node[isTarget]')
-        .addClass('node-glow')
-        .selector('edge[isIncoming]')
-        .addClass('edge-glow-incoming')
-        .selector('edge:not([isIncoming])')
-        .addClass('edge-glow-outgoing')
-        .update();
+      // Apply CSS classes for shadow/glow effects
+      cy.nodes().forEach(node => {
+        if (node.data('isTarget')) {
+          node.addClass('node-glow');
+        }
+      });
+      
+      cy.edges().forEach(edge => {
+        if (edge.data('isIncoming')) {
+          edge.addClass('edge-glow-incoming');
+        } else {
+          edge.addClass('edge-glow-outgoing');
+        }
+      });
 
       // Set up tooltips on hover - show only the transaction amount
       cy.on('mouseover', 'edge', function(event) {
@@ -384,60 +367,47 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // Add a more sophisticated layout logic for better immediate visualization
-      try {
-        // Apply coseBilkent layout with constraints to maintain the left/right grouping
-        const layout = cy.layout({
-          name: 'coseBilkent',
-          fit: true,
-          padding: 50,
-          nodeDimensionsIncludeLabels: true,
-          nodeRepulsion: 8000,
-          idealEdgeLength: 150,
-          edgeElasticity: 0.45,
-          nestingFactor: 0.1,
-          gravity: 0.25,
-          // Fix nodes in their respective hemispheres (left/right)
-          // Using preset positions as a starting point
-          randomize: false,
-          animate: false,
-          // Keep the target node centered
-          position: function(node) {
-            if (node.data('isTarget')) {
-              return { x: 0, y: 0 };
-            }
-            
-            // Keep incoming nodes to the left
-            if (node.data('isIncoming')) {
-              return { x: -200 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
-            }
-            
-            // Keep outgoing nodes to the right
-            return { x: 200 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
+      // Apply coseBilkent layout with constraints to maintain the left/right grouping
+      const layout = cy.layout({
+        name: 'coseBilkent',
+        fit: true,
+        padding: 50,
+        nodeDimensionsIncludeLabels: true,
+        nodeRepulsion: 8000,
+        idealEdgeLength: 150,
+        edgeElasticity: 0.45,
+        nestingFactor: 0.1,
+        gravity: 0.25,
+        // Using preset positions as a starting point
+        randomize: false,
+        animate: true, // Enable animation
+        animationDuration: 700, // Animation duration in ms (700ms is a good balance)
+        animationEasing: 'ease-in-out-cubic', // Smooth animation curve
+        // Keep the target node centered
+        position: function(node) {
+          // Fix target node at center
+          if (node.data('isTarget')) {
+            return { x: 0, y: 0 };
           }
-        } as cytoscape.LayoutOptions);
-        
-        layout.run();
-        
-        // Apply final adjustments and fit to container
+          
+          // Keep incoming nodes to the left
+          if (node.data('isIncoming')) {
+            return { x: -200 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
+          }
+          
+          // Keep outgoing nodes to the right
+          return { x: 200 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
+        },
+        // Lock the target node in place to keep it centered
+        fixedNodeConstraint: [{ nodeId: address, position: { x: 0, y: 0 } }]
+      } as cytoscape.LayoutOptions);
+      
+      layout.run();
+      
+      // Fit to container after layout completes
+      cy.on('layoutstop', function() {
         cy.fit(undefined, 50);
-      } catch (layoutError) {
-        console.error("Error running coseBilkent layout:", layoutError);
-        // Fallback to concentric layout if coseBilkent fails
-        const fallbackLayout = cy.layout({ 
-          name: 'concentric',
-          concentric: function(node) {
-            if (node.data('isTarget')) return 10;
-            if (node.data('isIncoming')) return 5;
-            return 0;
-          },
-          levelWidth: function() { return 2; },
-          minNodeSpacing: 50,
-          animate: false
-        });
-        
-        fallbackLayout.run();
-      }
+      });
 
       // Add click event to nodes for navigation
       cy.on('tap', 'node', function(evt) {
