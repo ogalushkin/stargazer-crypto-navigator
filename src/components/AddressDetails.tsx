@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Copy, ExternalLink } from "lucide-react";
 import { toast } from 'sonner';
-import { NetworkType } from './NetworkSelector';
+import { NetworkType } from '@/utils/types';
 
 interface AddressDetailsProps {
   address: string;
