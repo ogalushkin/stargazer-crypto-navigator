@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +57,9 @@ interface TransactionGraphProps {
   isLoading?: boolean;
 }
 
+// Max number of transactions to display to prevent performance issues
+const MAX_TRANSACTIONS = 20;
+
 const TransactionGraph: React.FC<TransactionGraphProps> = ({
   address,
   network,
@@ -71,6 +73,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
 
   // Process transactions into nodes and edges
   const processGraphData = () => {
+    // Limit transactions to prevent performance issues
+    const limitedTransactions = transactions.length > MAX_TRANSACTIONS 
+      ? transactions.slice(0, MAX_TRANSACTIONS)
+      : transactions;
+    
     const nodes: GraphNode[] = [{ id: address, label: shortenAddress(address), isTarget: true }];
     const edges: GraphEdge[] = [];
     const nodeSet = new Set<string>([address]);
@@ -79,7 +86,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const outgoingNodes = new Set<string>();
 
     // First pass: identify incoming and outgoing nodes
-    transactions.forEach(tx => {
+    limitedTransactions.forEach(tx => {
       if (tx.to === address) {
         incomingNodes.add(tx.from);
       } else if (tx.from === address) {
@@ -88,7 +95,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     });
 
     // Second pass: create nodes with proper type
-    transactions.forEach((tx, index) => {
+    limitedTransactions.forEach((tx, index) => {
       // Add nodes if they don't exist
       if (!nodeSet.has(tx.from)) {
         nodes.push({ 
@@ -152,7 +159,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     }
   };
 
-  // Calculate edge width based on transaction value
+  // Calculate edge width based on transaction value using logarithmic scale
   const calculateEdgeWidth = (value: number, edges: GraphEdge[]): number => {
     if (value <= 0) return 1;
     
@@ -244,7 +251,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             selector: 'edge',
             style: {
               'width': 'data(width)',
-              'line-color': '#EA384C',
+              'line-color': '#EA384C', // Default red for outgoing
               'target-arrow-color': '#EA384C',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
@@ -260,7 +267,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           {
             selector: 'edge[isIncoming]',
             style: {
-              'line-color': '#10B981',
+              'line-color': '#10B981', // Modern green for incoming
               'target-arrow-color': '#10B981'
             }
           },
@@ -280,39 +287,41 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           }
         ],
         layout: {
-          name: 'grid', // Start with a simple layout
+          name: 'preset', // Start with a preset layout for positioning
           fit: true
         }
       });
 
-      // Add tooltips to edges
+      // Add tooltips to edges with enhanced styling
       cy.on('mouseover', 'edge', function(event) {
         const edge = event.target;
         const sourceNode = edge.source().data('label');
         const targetNode = edge.target().data('label');
         const value = edge.data('label');
         const direction = edge.data('isIncoming') ? 'Incoming' : 'Outgoing';
-        const color = edge.data('isIncoming') ? 'green' : 'red';
+        const color = edge.data('isIncoming') ? '#10B981' : '#EA384C'; // Match edge colors
         
-        // Use native tooltip (simpler implementation)
+        // Create enhanced tooltip
         edge.popperRefObj = edge.popper({
           content: () => {
             const content = document.createElement('div');
             content.innerHTML = `
-              <div style="background-color: #1A1A25; color: white; padding: 8px 12px; border-radius: 4px; 
-                          border: 1px solid #454560; font-size: 12px; max-width: 200px;
-                          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)">
-                <div style="margin-bottom: 4px; display: flex; align-items: center;">
+              <div style="background-color: #1A1A25; color: white; padding: 8px 12px; border-radius: 6px; 
+                          border: 1px solid #454560; font-size: 12px; max-width: 220px;
+                          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                <div style="margin-bottom: 6px; display: flex; align-items: center;">
                   <span style="display: inline-block; width: 8px; height: 8px; 
                                background-color: ${color}; border-radius: 50%; margin-right: 6px;"></span>
                   <span style="font-weight: 600;">${direction} Transaction</span>
                 </div>
-                <div style="margin-bottom: 4px;">
+                <div style="margin-bottom: 6px;">
                   <span style="color: #A1A1AA;">Amount:</span> 
-                  <span style="font-weight: 500;">${value}</span>
+                  <span style="font-weight: 600;">${value}</span>
                 </div>
-                <div style="font-size: 11px; color: #A1A1AA;">
-                  ${sourceNode} → ${targetNode}
+                <div style="font-size: 11px; color: #A1A1AA; display: flex; align-items: center;">
+                  <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    ${sourceNode} → ${targetNode}
+                  </div>
                 </div>
               </div>
             `;
@@ -343,46 +352,91 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // After initialization, run a more complex layout that separates incoming and outgoing nodes
+      // Implement Arkham-style layout with incoming nodes on left, target in center, outgoing on right
       try {
+        // First position nodes in general areas
+        nodes.forEach(node => {
+          const nodeElement = cy.getElementById(node.id);
+          
+          if (node.isTarget) {
+            // Center position for target node
+            nodeElement.position({ x: 0, y: 0 });
+          } else if (node.isIncoming) {
+            // Left side for incoming nodes (random y for distribution)
+            nodeElement.position({ 
+              x: -250 + (Math.random() * 100), 
+              y: Math.random() * 400 - 200 
+            });
+          } else {
+            // Right side for outgoing nodes (random y for distribution)
+            nodeElement.position({ 
+              x: 250 - (Math.random() * 100), 
+              y: Math.random() * 400 - 200 
+            });
+          }
+        });
+        
+        // Run the coseBilkent layout with constraints to maintain the left/right grouping
         const layout = cy.layout({
           name: 'coseBilkent',
           fit: true,
           padding: 50,
-          // Use positions to manipulate the layout:
-          // Target in the center, incoming nodes on the left, outgoing on the right
-          positions: function(node) {
-            // Using any here to allow additional properties
-            const nodeData = node.data() as any;
-            if (nodeData.isTarget) {
-              // Center
-              return { x: 0, y: 0 };
-            } else if (node.data('isIncoming')) {
-              // Left side (incoming)
-              return { x: -200, y: Math.random() * 200 - 100 };
-            } else {
-              // Right side (outgoing)
-              return { x: 200, y: Math.random() * 200 - 100 };
-            }
-          },
-          // TypeScript doesn't know about additional coseBilkent-specific options
-          // so we need to use type assertion
-          nodeDimensionsIncludeLabels: true,
+          // Use specific positioning to maintain grouping
+          // Incoming left, target center, outgoing right
+          animate: false,
           randomize: false,
+          nodeDimensionsIncludeLabels: true,
           nodeRepulsion: 8000,
           idealEdgeLength: 150,
           edgeElasticity: 0.45,
           nestingFactor: 0.1,
           gravity: 0.25,
-          numIter: 2500
+          // Fix nodes in their respective hemispheres (left/right)
+          position: function(node) {
+            // Get the pre-positioned coordinates
+            const pos = node.position();
+            
+            // Keep the target node centered
+            if (node.data('isTarget')) {
+              return { x: 0, y: 0 };
+            }
+            
+            // Lock incoming nodes to left hemisphere
+            if (node.data('isIncoming')) {
+              return { x: Math.min(pos.x, -50), y: pos.y };
+            }
+            
+            // Lock outgoing nodes to right hemisphere
+            return { x: Math.max(pos.x, 50), y: pos.y };
+          },
+          // Prevent too much movement during layout calculation
+          boundingBox: {
+            x1: -400, y1: -300,
+            x2: 400, y2: 300,
+            w: 800, h: 600
+          }
         } as cytoscape.LayoutOptions);
         
         layout.run();
-        console.log("coseBilkent layout run successfully");
+        console.log("Arkham-style layout applied successfully");
+        
+        // Apply final adjustments and fit to container
+        cy.fit(undefined, 50);
       } catch (layoutError) {
         console.error("Error running coseBilkent layout:", layoutError);
-        // Fallback to grid layout if coseBilkent fails
-        cy.layout({ name: 'grid', fit: true }).run();
+        // Fallback to simpler layout if coseBilkent fails
+        const fallbackLayout = cy.layout({ 
+          name: 'concentric',
+          concentric: function(node) {
+            if (node.data('isTarget')) return 10;
+            if (node.data('isIncoming')) return 8;
+            return 5;
+          },
+          levelWidth: function() { return 1; },
+          animate: false
+        });
+        
+        fallbackLayout.run();
       }
 
       // Add click event to nodes
@@ -406,6 +460,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     };
   }, [containerRef, address, transactions, isLoading, network]);
 
+  // Show loading state
   if (isLoading) {
     return (
       <Card className="bg-stargazer-card border-stargazer-muted/40 h-[500px]">
@@ -422,6 +477,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     );
   }
 
+  // Show empty state if no transactions
   if (transactions.length === 0) {
     return (
       <Card className="bg-stargazer-card border-stargazer-muted/40 h-[500px]">
@@ -445,27 +501,57 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     );
   }
 
+  // Add transaction count and info if we had to limit them
+  const transactionCount = transactions.length;
+  const isTruncated = transactionCount > MAX_TRANSACTIONS;
+
   return (
     <Card className="bg-stargazer-card border-stargazer-muted/40 animate-fade-in">
       <CardHeader className="pb-3 flex flex-row justify-between items-center">
-        <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
+        <div>
+          <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
+          {isTruncated && (
+            <p className="text-xs text-white/50 mt-1">
+              Showing {MAX_TRANSACTIONS} of {transactionCount} transactions for better performance
+            </p>
+          )}
+        </div>
         <div className="flex gap-1.5">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
-            onClick={zoomIn}
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
-            onClick={zoomOut}
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
+                  onClick={zoomIn}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Zoom In</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
+                  onClick={zoomOut}
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Zoom Out</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="relative h-[424px] p-0 overflow-hidden">
@@ -474,7 +560,18 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
           </div>
         )}
-        <div className="w-full h-full" ref={containerRef} />
+        <div className="relative w-full h-full" ref={containerRef}>
+          <div className="absolute bottom-3 left-3 flex items-center gap-4 z-10 p-2 bg-stargazer-card/80 rounded-md">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-10B981 rounded-full mr-2"></div>
+              <span className="text-xs text-white/70">Incoming</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-EA384C rounded-full mr-2"></div>
+              <span className="text-xs text-white/70">Outgoing</span>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
