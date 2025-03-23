@@ -1,11 +1,10 @@
 
 /**
  * Configuration file with API keys
- * Replace these with actual API keys when ready for production
  */
 export const API_KEYS = {
   // Ethereum blockchain explorers
-  etherscan: 'YourEtherscanApiKey', // Get from https://etherscan.io/apis
+  etherscan: 'TP1JNPYJCVRBZG9X226C68YZ1ASFS5F1HE', // Etherscan API key
   infura: 'YourInfuraApiKey',       // Get from https://infura.io
   
   // Bitcoin blockchain explorers
@@ -13,11 +12,11 @@ export const API_KEYS = {
   blockchair: 'YourBlockchairApiKey', // Get from https://blockchair.com/api
   
   // Solana blockchain explorers
-  solana: 'YourSolanaApiKey',       // Get from https://solana.fm
+  solana: '54c6cc54-e178-45d7-8894-1c5275ce6682', // Helius API key
   solscan: 'YourSolscanApiKey',     // Get from https://public-api.solscan.io
   
   // TON blockchain explorers
-  toncenter: 'YourToncenterApiKey', // Get from https://toncenter.com
+  toncenter: '0535a464fa107609917c5cbf66d66d036a657402a189df0a7cad436c59fad8fad21c2', // Toncenter API key
   
   // Price APIs
   coingecko: '',                    // Basic tier doesn't require API key
@@ -33,7 +32,7 @@ export const API_ENDPOINTS = {
   infura: 'https://mainnet.infura.io/v3',
   blockstream: 'https://blockstream.info/api',
   blockchair: 'https://api.blockchair.com',
-  solana: 'https://api.solana.fm',
+  solana: 'https://api.helius-rpc.com',
   solscan: 'https://public-api.solscan.io/account',
   ton: 'https://toncenter.com/api/v2',
   
