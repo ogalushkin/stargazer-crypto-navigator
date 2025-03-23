@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
@@ -37,70 +37,76 @@ interface CytoscapeGraphProps {
   selectedTransaction: string | null;
 }
 
-const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
+// Define the ref type for the CytoscapeGraph
+export interface CytoscapeGraphRef {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  fitGraph: () => void;
+  rebuildGraph: () => void;
+  exportGraph: () => void;
+}
+
+const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
   address,
   network,
   nodes,
   edges,
   onSelectTransaction,
   selectedTransaction
-}) => {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const navigate = useNavigate();
   const [isRendering, setIsRendering] = useState(false);
   const [hasError, setHasError] = useState(false);
   
-  // Expose methods for the parent component
-  React.useImperativeHandle(
-    { current: {
-      zoomIn: () => {
-        if (cyRef.current) {
-          cyRef.current.zoom(cyRef.current.zoom() * 1.2);
-        }
-      },
-      zoomOut: () => {
-        if (cyRef.current) {
-          cyRef.current.zoom(cyRef.current.zoom() * 0.8);
-        }
-      },
-      fitGraph: () => {
-        if (cyRef.current) {
-          cyRef.current.fit(undefined, 50);
-        }
-      },
-      rebuildGraph: () => {
-        if (cyRef.current) {
-          cyRef.current.destroy();
-          cyRef.current = null;
-        }
-        setHasError(false);
-        initializeGraph();
-      },
-      exportGraph: () => {
-        if (!cyRef.current) return;
-        
-        // Create a PNG image of the graph
-        const png = cyRef.current.png({
-          output: 'blob',
-          scale: 2,
-          bg: '#131118',
-          full: true
-        });
-        
-        // Create a download link
-        const url = URL.createObjectURL(png);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${network}-${shortenAddress(address)}-graph.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+  // Expose methods for the parent component using the proper forwardRef pattern
+  useImperativeHandle(ref, () => ({
+    zoomIn: () => {
+      if (cyRef.current) {
+        cyRef.current.zoom(cyRef.current.zoom() * 1.2);
       }
-    }},
-    []
-  );
+    },
+    zoomOut: () => {
+      if (cyRef.current) {
+        cyRef.current.zoom(cyRef.current.zoom() * 0.8);
+      }
+    },
+    fitGraph: () => {
+      if (cyRef.current) {
+        cyRef.current.fit(undefined, 50);
+      }
+    },
+    rebuildGraph: () => {
+      if (cyRef.current) {
+        cyRef.current.destroy();
+        cyRef.current = null;
+      }
+      setHasError(false);
+      initializeGraph();
+    },
+    exportGraph: () => {
+      if (!cyRef.current) return;
+      
+      // Create a PNG image of the graph
+      const png = cyRef.current.png({
+        output: 'blob',
+        scale: 2,
+        bg: '#131118',
+        full: true
+      });
+      
+      // Create a download link
+      const url = URL.createObjectURL(png);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${network}-${shortenAddress(address)}-graph.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }));
   
   const handleNodeClick = (nodeId: string) => {
     if (nodeId !== address) {
@@ -322,7 +328,6 @@ const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
               'line-style': 'solid',
               'width': 'data(width)',
               'z-index': 999,
-              'shadow-blur': 10,
               'shadow-color': '#FFFFFF',
               'shadow-opacity': 0.5
             }
@@ -492,6 +497,8 @@ const CytoscapeGraph: React.FC<CytoscapeGraphProps> = ({
       )}
     </div>
   );
-};
+});
+
+CytoscapeGraph.displayName = 'CytoscapeGraph';
 
 export default CytoscapeGraph;

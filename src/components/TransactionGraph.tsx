@@ -9,7 +9,7 @@ import { Transaction, FilterState } from '@/utils/graphTypes';
 import GraphControls from './graph/GraphControls';
 import TransactionTable from './TransactionTable';
 import TransactionFilters from './TransactionFilters';
-import CytoscapeGraph from './graph/CytoscapeGraph';
+import CytoscapeGraph, { CytoscapeGraphRef } from './graph/CytoscapeGraph';
 import { useGraphData } from './graph/useGraphData';
 import { MAX_TRANSACTIONS } from '@/utils/graphUtils';
 
@@ -41,7 +41,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
-  const cytoscapeRef = useRef<any>(null);
+  const cytoscapeRef = useRef<CytoscapeGraphRef>(null);
   
   // Filter and sort state
   const [filters, setFilters] = useState<FilterState>({
@@ -73,31 +73,31 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
 
   // Graph control functions
   const zoomIn = () => {
-    if (cytoscapeRef.current?.zoomIn) {
+    if (cytoscapeRef.current) {
       cytoscapeRef.current.zoomIn();
     }
   };
 
   const zoomOut = () => {
-    if (cytoscapeRef.current?.zoomOut) {
+    if (cytoscapeRef.current) {
       cytoscapeRef.current.zoomOut();
     }
   };
 
   const fitGraph = () => {
-    if (cytoscapeRef.current?.fitGraph) {
+    if (cytoscapeRef.current) {
       cytoscapeRef.current.fitGraph();
     }
   };
 
   const rebuildGraph = () => {
-    if (cytoscapeRef.current?.rebuildGraph) {
+    if (cytoscapeRef.current) {
       cytoscapeRef.current.rebuildGraph();
     }
   };
 
   const exportGraph = () => {
-    if (cytoscapeRef.current?.exportGraph) {
+    if (cytoscapeRef.current) {
       cytoscapeRef.current.exportGraph();
     }
   };
