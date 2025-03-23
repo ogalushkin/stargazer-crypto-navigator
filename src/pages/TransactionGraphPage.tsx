@@ -53,6 +53,7 @@ const TransactionGraphPage = () => {
         
         // Important: Make sure we're setting the transactions correctly
         if (data && Array.isArray(data.transactions)) {
+          console.log("Fetched transactions:", data.transactions.length);
           setTransactions(data.transactions);
           setIsAddressValid(true);
         } else {
@@ -110,12 +111,25 @@ const TransactionGraphPage = () => {
             </div>
           ) : (
             <div className="w-full h-[calc(100vh-140px)] bg-black">
-              <TransactionGraph 
-                address={address}
-                network={network as NetworkType}
-                transactions={transactions}
-                fullPage={true}
-              />
+              {transactions && transactions.length > 0 ? (
+                <TransactionGraph 
+                  address={address}
+                  network={network as NetworkType}
+                  transactions={transactions}
+                  fullPage={true}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <p className="text-white/70 mb-4">No transactions found for this address</p>
+                  <Button 
+                    variant="outline" 
+                    className="bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
+                    onClick={handleBackClick}
+                  >
+                    Back to Address
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </main>
