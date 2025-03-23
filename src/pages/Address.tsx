@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import AddressInput from '@/components/AddressInput';
 import AddressDetails from '@/components/AddressDetails';
 import AssetList from '@/components/AssetList';
+import TransactionGraph from '@/components/TransactionGraph';
 import { Button } from "@/components/ui/button";
 import { NetworkIcon, ExternalLink, Loader2 } from "lucide-react";
 import { NetworkType } from '@/utils/types';
@@ -113,21 +114,35 @@ const Address = () => {
                 </div>
               </div>
               
-              <Card className="bg-stargazer-card border-stargazer-muted/40 h-[300px]">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
-                </CardHeader>
-                <CardContent className="h-[224px] flex items-center justify-center">
-                  <div className="flex flex-col items-center text-center">
-                    <NetworkIcon className="w-10 h-10 text-violet-500 mb-3" />
-                    <p className="text-white/70 mb-4">View the interactive transaction graph for this address</p>
+              <Card className="bg-stargazer-card border-stargazer-muted/40 overflow-hidden">
+                <CardHeader className="pb-3 border-b border-stargazer-muted/20">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
                     <Button 
-                      className="bg-violet-600 hover:bg-violet-700"
+                      className="bg-violet-600 hover:bg-violet-700 text-white"
                       onClick={handleViewGraph}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      Open Full Transaction Graph
+                      View Full Graph
                     </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="h-[300px] flex items-center justify-center bg-stargazer-darkbg">
+                    <div className="flex flex-col items-center text-center p-6">
+                      <NetworkIcon className="w-10 h-10 text-violet-500 mb-3" />
+                      <p className="text-white/70 mb-4 max-w-md">
+                        Explore the transaction graph for this address on a dedicated page for better visualization
+                      </p>
+                      <Button 
+                        className="bg-violet-600 hover:bg-violet-700"
+                        onClick={handleViewGraph}
+                        size="lg"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Open Interactive Transaction Graph
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

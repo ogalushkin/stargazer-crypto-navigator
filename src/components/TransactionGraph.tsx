@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -264,6 +263,10 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'target-arrow-color': OUTGOING_COLOR,
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
+              // Key improvements for center-aligned edges
+              'target-endpoint': 'center',  // Force edges to connect at center
+              'source-endpoint': 'center',  // Force edges to connect at center
+              'edge-distances': 'node-position', // Calculate from node centers
               'control-point-step-size': 40, // Add spacing between parallel edges
               'control-point-weight': 0.5,   // Control bezier curve
               'label': '',                   // No labels on edges by default
@@ -275,11 +278,6 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'text-rotation': 'autorotate',
               'arrow-scale': 1.3,
               'line-style': 'solid',
-              // Fix for edge endpoints - ensure they connect at the center of nodes
-              'source-endpoint': '0deg',
-              'target-endpoint': '0deg', 
-              'source-distance-from-node': 0,
-              'target-distance-from-node': 0,
               'z-index': 1
             } as cytoscape.Css.Edge
           },
@@ -391,7 +389,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         // Using preset positions as a starting point
         randomize: false,
         animate: true, // Enable animation
-        animationDuration: 700, // Animation duration in ms (700ms is a good balance)
+        animationDuration: 700, // Animation duration in ms
         animationEasing: 'ease-in-out-cubic', // Smooth animation curve
         // Keep the target node centered
         position: function(node) {

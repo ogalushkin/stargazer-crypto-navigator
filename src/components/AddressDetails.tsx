@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Copy, ExternalLink } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, NetworkIcon } from "lucide-react";
 import { toast } from 'sonner';
 import { NetworkType } from '@/utils/types';
 
@@ -127,10 +127,12 @@ const AddressDetails: React.FC<AddressDetailsProps> = ({
 
         <Button 
           onClick={onBuildGraph}
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white border-none transition-all-cubic"
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white border-none transition-all-cubic group"
+          size="lg"
         >
-          <span>Build Transaction Graph</span>
-          <ArrowRight className="ml-2 h-4 w-4" />
+          <NetworkIcon className="mr-2 h-5 w-5" />
+          <span>Explore Transaction Graph</span>
+          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Button>
       </CardContent>
     </Card>
