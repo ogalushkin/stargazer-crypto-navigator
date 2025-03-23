@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import { Loader2, NetworkIcon, ZoomIn, ZoomOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +7,9 @@ import cytoscape from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
 
 // Register the cose-bilkent layout
-if (!cytoscape.layouts.hasOwnProperty('coseBilkent')) {
+if (!cytoscape.use) {
+  console.error("Cytoscape.use is not available");
+} else {
   cytoscape.use(coseBilkent);
 }
 
@@ -166,9 +167,10 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             'height': 50,
             'font-weight': 'bold',
             'text-background-color': '#4C1D95',
-            'shadow-blur': '10px',
             'shadow-color': '#7C3AED',
-            'shadow-opacity': 0.5
+            'shadow-opacity': 0.5,
+            'shadow-offset-x': 0,
+            'shadow-offset-y': 0
           }
         },
         {

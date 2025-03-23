@@ -34,9 +34,9 @@ export const fetchAddressData = async (
 // Helper function to generate mock data
 const generateMockData = (address: string, network: NetworkType): AddressData => {
   // Use the address as a seed for pseudo-random data
-  const seed = parseInt(address.substring(2, 10), 16) || 12345;
+  let seedValue = parseInt(address.substring(2, 10), 16) || 12345;
   const random = (min: number, max: number) => {
-    const x = Math.sin(seed++) * 10000;
+    const x = Math.sin(seedValue++) * 10000;
     return min + (x - Math.floor(x)) * (max - min);
   };
   
