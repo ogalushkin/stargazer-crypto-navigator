@@ -10,6 +10,7 @@ export interface Asset {
   value: number;
   price: number;
   change24h: number;
+  icon?: string; // Added optional icon property
 }
 
 // Transaction type definition
