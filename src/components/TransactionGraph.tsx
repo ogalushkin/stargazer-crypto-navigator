@@ -1,15 +1,21 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import { Loader2, NetworkIcon, ZoomIn, ZoomOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
-// Import the layout properly
 import coseBilkent from 'cytoscape-cose-bilkent';
 
-// Register the layout before using it
-// This needs to happen only once, outside of the component
-cytoscape.use(coseBilkent);
+// Make sure the layout is registered only once
+if (!cytoscape.layouts || !cytoscape.layouts.hasOwnProperty('coseBilkent')) {
+  try {
+    cytoscape.use(coseBilkent);
+    console.log("coseBilkent layout registered successfully");
+  } catch (e) {
+    console.error("Failed to register coseBilkent layout:", e);
+  }
+}
 
 export interface Transaction {
   hash: string;
@@ -114,110 +120,130 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     
     const { nodes, edges } = processGraphData();
 
-    // Initialize cytoscape
-    const cy = cytoscape({
-      container: containerRef.current,
-      elements: [
-        ...nodes.map(node => ({
-          data: { 
-            id: node.id, 
-            label: node.label,
-            isTarget: node.isTarget || false
+    try {
+      // Initialize cytoscape with a basic layout first
+      const cy = cytoscape({
+        container: containerRef.current,
+        elements: [
+          ...nodes.map(node => ({
+            data: { 
+              id: node.id, 
+              label: node.label,
+              isTarget: node.isTarget || false
+            }
+          })),
+          ...edges.map(edge => ({
+            data: { 
+              id: edge.id, 
+              source: edge.source, 
+              target: edge.target, 
+              label: edge.label,
+              isIncoming: edge.isIncoming || false
+            }
+          }))
+        ],
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': '#2D2D3D',
+              'border-color': '#454560',
+              'border-width': 1,
+              'width': 40,
+              'height': 40,
+              'label': 'data(label)',
+              'color': '#E2E8F0',
+              'text-background-color': '#1A1A25',
+              'text-background-opacity': 0.7,
+              'text-background-padding': '2px',
+              'text-valign': 'bottom',
+              'text-halign': 'center',
+              'font-size': '10px',
+              'text-margin-y': 6
+            }
+          },
+          {
+            selector: 'node[isTarget]',
+            style: {
+              'background-color': '#8B5CF6',
+              'border-color': '#A78BFA',
+              'border-width': 2,
+              'width': 50,
+              'height': 50,
+              'font-weight': 'bold',
+              'text-background-color': '#4C1D95'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 1.5,
+              'line-color': '#EA384C',
+              'target-arrow-color': '#EA384C',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'label': 'data(label)',
+              'font-size': '8px',
+              'color': '#E2E8F0',
+              'text-background-color': '#1A1A25',
+              'text-background-opacity': 0.7,
+              'text-background-padding': '2px',
+              'text-rotation': 'autorotate'
+            }
+          },
+          {
+            selector: 'edge[isIncoming]',
+            style: {
+              'line-color': '#10B981',
+              'target-arrow-color': '#10B981'
+            }
           }
-        })),
-        ...edges.map(edge => ({
-          data: { 
-            id: edge.id, 
-            source: edge.source, 
-            target: edge.target, 
-            label: edge.label,
-            isIncoming: edge.isIncoming || false
-          }
-        }))
-      ],
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'background-color': '#2D2D3D',
-            'border-color': '#454560',
-            'border-width': 1,
-            'width': 40,
-            'height': 40,
-            'label': 'data(label)',
-            'color': '#E2E8F0',
-            'text-background-color': '#1A1A25',
-            'text-background-opacity': 0.7,
-            'text-background-padding': '2px',
-            'text-valign': 'bottom',
-            'text-halign': 'center',
-            'font-size': '10px',
-            'text-margin-y': 6
-          }
-        },
-        {
-          selector: 'node[isTarget]',
-          style: {
-            'background-color': '#8B5CF6',
-            'border-color': '#A78BFA',
-            'border-width': 2,
-            'width': 50,
-            'height': 50,
-            'font-weight': 'bold',
-            'text-background-color': '#4C1D95'
-            // Removed shadow properties as they're not supported in this version of Cytoscape
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'width': 1.5,
-            'line-color': '#EA384C',
-            'target-arrow-color': '#EA384C',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'label': 'data(label)',
-            'font-size': '8px',
-            'color': '#E2E8F0',
-            'text-background-color': '#1A1A25',
-            'text-background-opacity': 0.7,
-            'text-background-padding': '2px',
-            'text-rotation': 'autorotate'
-          }
-        },
-        {
-          selector: 'edge[isIncoming]',
-          style: {
-            'line-color': '#10B981',
-            'target-arrow-color': '#10B981'
-          }
+        ],
+        layout: {
+          name: 'grid', // Start with a simple layout
+          fit: true
         }
-      ],
-      layout: {
-        name: 'coseBilkent',
-        animate: true,
-        animationDuration: 500,
-        padding: 50,
-        fit: true,
-        nodeDimensionsIncludeLabels: true,
-        randomize: false,
-        nodeRepulsion: 8000,
-        idealEdgeLength: 100,
-        edgeElasticity: 0.45,
-        nestingFactor: 0.1,
-        gravity: 0.25,
-        numIter: 2500
-      } as any
-    });
+      });
 
-    // Add click event to nodes
-    cy.on('tap', 'node', function(evt) {
-      const nodeId = evt.target.id();
-      handleNodeClick(nodeId);
-    });
+      // After initialization, run the more complex layout
+      if (cy.layout && typeof cy.layout === 'function') {
+        try {
+          cy.layout({
+            name: 'coseBilkent',
+            animate: true,
+            animationDuration: 500,
+            padding: 50,
+            fit: true,
+            nodeDimensionsIncludeLabels: true,
+            randomize: false,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 100,
+            edgeElasticity: 0.45,
+            nestingFactor: 0.1,
+            gravity: 0.25,
+            numIter: 2500
+          }).run();
+          
+          console.log("coseBilkent layout run successfully");
+        } catch (layoutError) {
+          console.error("Error running coseBilkent layout:", layoutError);
+          // Fallback to grid layout if coseBilkent fails
+          cy.layout({ name: 'grid', fit: true }).run();
+        }
+      }
 
-    cyRef.current = cy;
-    setIsRendering(false);
+      // Add click event to nodes
+      cy.on('tap', 'node', function(evt) {
+        const nodeId = evt.target.id();
+        handleNodeClick(nodeId);
+      });
+
+      cyRef.current = cy;
+    } catch (e) {
+      console.error("Error initializing cytoscape:", e);
+    } finally {
+      setIsRendering(false);
+    }
 
     return () => {
       if (cyRef.current) {
