@@ -166,11 +166,8 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             'width': 50,
             'height': 50,
             'font-weight': 'bold',
-            'text-background-color': '#4C1D95',
-            'shadow-color': '#7C3AED',
-            'shadow-opacity': 0.5,
-            'shadow-offset-x': 0,
-            'shadow-offset-y': 0
+            'text-background-color': '#4C1D95'
+            // Removed shadow properties as they're not supported in this version of Cytoscape
           }
         },
         {
