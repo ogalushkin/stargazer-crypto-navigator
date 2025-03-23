@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -55,16 +56,22 @@ interface TransactionGraphProps {
   network: string;
   transactions: Transaction[];
   isLoading?: boolean;
+  fullPage?: boolean;
 }
 
 // Max number of transactions to display to prevent performance issues
 const MAX_TRANSACTIONS = 100;
 
+// Arkham-inspired colors
+const INCOMING_COLOR = '#00FF41'; // Bright green
+const OUTGOING_COLOR = '#FF3864'; // Bright red/pink
+
 const TransactionGraph: React.FC<TransactionGraphProps> = ({
   address,
   network,
   transactions,
-  isLoading = false
+  isLoading = false,
+  fullPage = false
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
@@ -253,8 +260,8 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             selector: 'edge',
             style: {
               'width': 'data(width)',
-              'line-color': '#D946EF',       // Fuchsia for outgoing
-              'target-arrow-color': '#D946EF',
+              'line-color': OUTGOING_COLOR,  // Outgoing edge color
+              'target-arrow-color': OUTGOING_COLOR,
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
               'control-point-step-size': 40, // Add spacing between parallel edges
@@ -268,30 +275,33 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'text-rotation': 'autorotate',
               'arrow-scale': 1.3,
               'line-style': 'solid',
-              'target-endpoint': '0deg',
-              'source-endpoint': '180deg',
+              // Fix for edge endpoints - ensure they connect at the center of nodes
+              'source-endpoint': '0deg',
+              'target-endpoint': '0deg', 
+              'source-distance-from-node': 0,
+              'target-distance-from-node': 0,
               'z-index': 1
             } as cytoscape.Css.Edge
           },
           {
             selector: 'edge[isIncoming]',
             style: {
-              'line-color': '#0EA5E9',       // Teal blue for incoming
-              'target-arrow-color': '#0EA5E9'
+              'line-color': INCOMING_COLOR,  // Incoming edge color
+              'target-arrow-color': INCOMING_COLOR
             } as cytoscape.Css.Edge
           },
           {
             selector: 'node[isIncoming]',
             style: {
               'background-color': '#000000',
-              'border-color': '#0EA5E9'      // Blue border for incoming nodes
+              'border-color': INCOMING_COLOR  // Green border for incoming nodes
             } as cytoscape.Css.Node
           },
           {
             selector: 'node[isOutgoing]',
             style: {
               'background-color': '#000000',
-              'border-color': '#D946EF'      // Pink border for outgoing nodes
+              'border-color': OUTGOING_COLOR  // Red border for outgoing nodes
             } as cytoscape.Css.Node
           }
         ],
@@ -320,7 +330,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
       cy.on('mouseover', 'edge', function(event) {
         const edge = event.target;
         const value = edge.data('label'); // Transaction amount
-        const color = edge.data('isIncoming') ? '#0EA5E9' : '#D946EF';
+        const color = edge.data('isIncoming') ? INCOMING_COLOR : OUTGOING_COLOR;
         
         // Create minimalist tooltip
         edge.popperRefObj = edge.popper({
@@ -447,11 +457,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   // Show loading state
   if (isLoading) {
     return (
-      <Card className="bg-stargazer-card border-stargazer-muted/40 h-[500px]">
+      <Card className={`bg-stargazer-card border-stargazer-muted/40 ${fullPage ? 'w-full h-[calc(100vh-80px)]' : 'h-[500px]'}`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
         </CardHeader>
-        <CardContent className="h-[424px] flex items-center justify-center">
+        <CardContent className={`${fullPage ? 'h-[calc(100vh-140px)]' : 'h-[424px]'} flex items-center justify-center`}>
           <div className="flex flex-col items-center">
             <Loader2 className="w-10 h-10 text-violet-500 animate-spin mb-3" />
             <p className="text-white/70">Loading transaction data...</p>
@@ -464,11 +474,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   // Show empty state if no transactions
   if (transactions.length === 0) {
     return (
-      <Card className="bg-stargazer-card border-stargazer-muted/40 h-[500px]">
+      <Card className={`bg-stargazer-card border-stargazer-muted/40 ${fullPage ? 'w-full h-[calc(100vh-80px)]' : 'h-[500px]'}`}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
         </CardHeader>
-        <CardContent className="h-[424px] flex items-center justify-center">
+        <CardContent className={`${fullPage ? 'h-[calc(100vh-140px)]' : 'h-[424px]'} flex items-center justify-center`}>
           <div className="flex flex-col items-center">
             <NetworkIcon className="w-10 h-10 text-white/30 mb-3" />
             <p className="text-white/70 mb-4">No transactions found for this address</p>
@@ -490,7 +500,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   const isTruncated = transactionCount > MAX_TRANSACTIONS;
 
   return (
-    <Card className="bg-stargazer-card border-stargazer-muted/40 animate-fade-in">
+    <Card className={`bg-stargazer-card border-stargazer-muted/40 animate-fade-in ${fullPage ? 'w-full h-[calc(100vh-80px)]' : ''}`}>
       <CardHeader className="pb-3 flex flex-row justify-between items-center">
         <div>
           <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
@@ -559,7 +569,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           </TooltipProvider>
         </div>
       </CardHeader>
-      <CardContent className="relative h-[424px] p-0 overflow-hidden">
+      <CardContent className={`relative ${fullPage ? 'h-[calc(100vh-140px)]' : 'h-[424px]'} p-0 overflow-hidden`}>
         {isRendering && (
           <div className="absolute inset-0 flex items-center justify-center z-10 bg-stargazer-card/80">
             <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
@@ -568,11 +578,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         <div className="relative w-full h-full" ref={containerRef}>
           <div className="absolute bottom-3 left-3 flex items-center gap-4 z-10 p-2 bg-stargazer-card/80 rounded-md">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-[#0EA5E9] rounded-full mr-2"></div>
+              <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: INCOMING_COLOR }}></div>
               <span className="text-xs text-white/70">Incoming</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-[#D946EF] rounded-full mr-2"></div>
+              <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: OUTGOING_COLOR }}></div>
               <span className="text-xs text-white/70">Outgoing</span>
             </div>
           </div>

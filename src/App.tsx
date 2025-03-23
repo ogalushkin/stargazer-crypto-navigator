@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Address from "./pages/Address";
+import TransactionGraphPage from "./pages/TransactionGraphPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/address/:network/:address" element={<Address />} />
+          <Route path="/graph/:network/:address" element={<TransactionGraphPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

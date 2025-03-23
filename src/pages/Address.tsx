@@ -5,17 +5,17 @@ import Header from '@/components/Header';
 import AddressInput from '@/components/AddressInput';
 import AddressDetails from '@/components/AddressDetails';
 import AssetList from '@/components/AssetList';
-import TransactionGraph from '@/components/TransactionGraph';
+import { Button } from "@/components/ui/button";
+import { NetworkIcon, ExternalLink, Loader2 } from "lucide-react";
 import { NetworkType } from '@/utils/types';
 import { fetchAddressData } from '@/utils/api';
 import { detectNetwork, validateAddress } from '@/utils/validation';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 const Address = () => {
   const { network = 'ethereum', address = '' } = useParams<{ network: string; address: string }>();
   const [isLoading, setIsLoading] = useState(true);
-  const [isGraphVisible, setIsGraphVisible] = useState(false);
   const [balance, setBalance] = useState({ native: '0.0000', usd: 0 });
   const [assets, setAssets] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -25,7 +25,6 @@ const Address = () => {
   useEffect(() => {
     const validateAndFetchData = async () => {
       setIsLoading(true);
-      setIsGraphVisible(false);
       
       try {
         // Re-detect network to ensure consistency (in case URL was edited manually)
@@ -74,17 +73,8 @@ const Address = () => {
     }
   }, [address, network, navigate]);
 
-  const handleBuildGraph = () => {
-    setIsGraphVisible(true);
-    
-    // Scroll to graph with animation
-    const graphElement = document.getElementById('transaction-graph');
-    if (graphElement) {
-      window.scrollTo({
-        top: graphElement.offsetTop - 100,
-        behavior: 'smooth'
-      });
-    }
+  const handleViewGraph = () => {
+    navigate(`/graph/${network}/${address}`);
   };
 
   if (!isAddressValid && !isLoading) {
@@ -115,7 +105,7 @@ const Address = () => {
                     address={address}
                     network={network as NetworkType}
                     balance={balance}
-                    onBuildGraph={handleBuildGraph}
+                    onBuildGraph={handleViewGraph}
                   />
                 </div>
                 <div>
@@ -123,15 +113,24 @@ const Address = () => {
                 </div>
               </div>
               
-              {isGraphVisible && (
-                <div id="transaction-graph" className="pt-6">
-                  <TransactionGraph 
-                    address={address}
-                    network={network}
-                    transactions={transactions}
-                  />
-                </div>
-              )}
+              <Card className="bg-stargazer-card border-stargazer-muted/40 h-[300px]">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-medium">Transaction Graph</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[224px] flex items-center justify-center">
+                  <div className="flex flex-col items-center text-center">
+                    <NetworkIcon className="w-10 h-10 text-violet-500 mb-3" />
+                    <p className="text-white/70 mb-4">View the interactive transaction graph for this address</p>
+                    <Button 
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={handleViewGraph}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open Full Transaction Graph
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
         </main>
