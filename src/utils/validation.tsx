@@ -1,5 +1,32 @@
 
-import { NetworkType } from "@/components/NetworkSelector";
+import { NetworkType } from "@/utils/types";
+
+/**
+ * Detects the blockchain network from the address format
+ */
+export const detectNetwork = (address: string): NetworkType | null => {
+  // Ethereum: starts with 0x followed by 40 hex characters
+  if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    return 'ethereum';
+  }
+  
+  // Bitcoin: starts with bc1, 1, or 3
+  if (/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(address)) {
+    return 'bitcoin';
+  }
+  
+  // TON: starts with EQ, UQ, etc.
+  if (/^(?:-1|0):[\da-fA-F]{64}$|^EQ[\w-]{48}$/.test(address)) {
+    return 'ton';
+  }
+  
+  // Solana: Base58 encoded string (mainly contains alphanumeric chars excluding 0, O, I, l)
+  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
+    return 'solana';
+  }
+  
+  return null;
+};
 
 /**
  * Validates if the provided string is a valid address for the specified network

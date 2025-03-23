@@ -6,12 +6,10 @@ import AddressInput from '@/components/AddressInput';
 import AddressDetails from '@/components/AddressDetails';
 import AssetList from '@/components/AssetList';
 import TransactionGraph from '@/components/TransactionGraph';
-import { NetworkType } from '@/components/NetworkSelector';
+import { NetworkType } from '@/utils/types';
 import { fetchAddressData } from '@/utils/api';
-import { validateAddress } from '@/utils/validation';
+import { detectNetwork, validateAddress } from '@/utils/validation';
 import { toast } from 'sonner';
-import { Asset } from '@/components/AssetList';
-import { Transaction } from '@/components/TransactionGraph';
 import { Loader2 } from 'lucide-react';
 
 const Address = () => {
@@ -19,8 +17,8 @@ const Address = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isGraphVisible, setIsGraphVisible] = useState(false);
   const [balance, setBalance] = useState({ native: '0.0000', usd: 0 });
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [assets, setAssets] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [isAddressValid, setIsAddressValid] = useState(true);
   const navigate = useNavigate();
 
@@ -30,6 +28,22 @@ const Address = () => {
       setIsGraphVisible(false);
       
       try {
+        // Re-detect network to ensure consistency (in case URL was edited manually)
+        const detectedNetwork = detectNetwork(address);
+        
+        if (!detectedNetwork) {
+          setIsAddressValid(false);
+          toast.error('Could not detect blockchain network from address format');
+          navigate('/');
+          return;
+        }
+        
+        // If the network in URL doesn't match detected network, redirect
+        if (detectedNetwork !== network) {
+          navigate(`/address/${detectedNetwork}/${address}`, { replace: true });
+          return;
+        }
+        
         // Validate address format
         const isValid = await validateAddress(address, network as NetworkType);
         

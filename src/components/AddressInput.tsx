@@ -4,26 +4,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import NetworkSelector, { NetworkType } from './NetworkSelector';
-import { validateAddress } from '@/utils/validation';
+import { NetworkType } from '@/utils/types';
+import { detectNetwork, validateAddress } from '@/utils/validation';
 import { toast } from 'sonner';
 
 const AddressInput: React.FC = () => {
   const [address, setAddress] = useState('');
-  const [network, setNetwork] = useState<NetworkType>('ethereum');
   const [isValidating, setIsValidating] = useState(false);
+  const [detectedNetwork, setDetectedNetwork] = useState<NetworkType | null>(null);
   const navigate = useNavigate();
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAddress(e.target.value);
+    // Clear detected network when address changes
+    setDetectedNetwork(null);
   };
 
   const clearAddress = () => {
     setAddress('');
-  };
-
-  const handleNetworkChange = (newNetwork: NetworkType) => {
-    setNetwork(newNetwork);
+    setDetectedNetwork(null);
   };
 
   const handleSearch = async () => {
@@ -35,6 +34,18 @@ const AddressInput: React.FC = () => {
     setIsValidating(true);
     
     try {
+      // Detect network based on address format
+      const network = detectNetwork(address);
+      
+      if (!network) {
+        toast.error('Could not detect blockchain network from address format');
+        setIsValidating(false);
+        return;
+      }
+      
+      setDetectedNetwork(network);
+      
+      // Validate the address for the detected network
       const isValid = await validateAddress(address, network);
       
       if (isValid) {
@@ -57,13 +68,13 @@ const AddressInput: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex flex-col md:flex-row gap-3 animate-slide-in">
+    <div className="w-full flex flex-col gap-3 animate-slide-in">
       <div className="relative flex-grow">
         <Input
           value={address}
           onChange={handleAddressChange}
           onKeyDown={handleKeyDown}
-          placeholder={`Enter ${network} address...`}
+          placeholder="Enter blockchain address..."
           className="h-12 pl-4 pr-10 bg-stargazer-muted/70 backdrop-blur-md border-stargazer-muted/80 focus:border-violet-500 text-base transition-all-cubic"
         />
         {address && (
@@ -76,12 +87,13 @@ const AddressInput: React.FC = () => {
           </button>
         )}
       </div>
-      <div className="w-full md:w-40">
-        <NetworkSelector 
-          selectedNetwork={network} 
-          onNetworkChange={handleNetworkChange}
-        />
-      </div>
+      
+      {detectedNetwork && !isValidating && (
+        <div className="text-sm text-white/70 -mt-1 ml-1">
+          Detected: <span className="text-violet-300 font-medium">{detectedNetwork.charAt(0).toUpperCase() + detectedNetwork.slice(1)} address</span>
+        </div>
+      )}
+      
       <Button 
         onClick={handleSearch}
         disabled={isValidating || !address.trim()}
