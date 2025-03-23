@@ -1,8 +1,6 @@
 
 # Stargazer Crypto Navigator
 
-![Stargazer Crypto Navigator](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/hero-image.png)
-
 A multi-chain blockchain explorer that allows you to analyze and visualize transactions across Ethereum, Bitcoin, Solana, and TON networks.
 
 ## Features
