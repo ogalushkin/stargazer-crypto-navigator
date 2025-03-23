@@ -146,7 +146,7 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
       const cy = cytoscape({
         container: containerRef.current,
         elements: elements,
-        style: getCytoscapeStyles() as cytoscape.Stylesheet[],
+        style: getCytoscapeStyles() as any, // Use 'any' temporarily to fix the type issue
         layout: getPresetLayoutConfig()
       });
 

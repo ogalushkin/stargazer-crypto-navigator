@@ -1,4 +1,3 @@
-
 import { CATEGORY_COLORS, INCOMING_COLOR, OUTGOING_COLOR, SELF_TRANSFER_COLOR } from '@/utils/graphUtils';
 
 // Define the cytoscape styles in a separate file to keep the main component cleaner
@@ -151,5 +150,5 @@ export const getCytoscapeStyles = () => {
         'border-color': OUTGOING_COLOR
       }
     }
-  ];
+  ] as any; // Return as any to resolve type issues with Cytoscape styles
 };
