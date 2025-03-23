@@ -2,49 +2,76 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-// Import assets to ensure they're included in the build
-import './assets/stargazer-favicon.svg'
-import './assets/stargazer-placeholder.svg'
 
-// Ensure title is set correctly - this is a failsafe
+// Set the document title immediately
 document.title = 'Stargazer';
 
 // Force browser to update favicon
 const updateFavicon = () => {
   try {
-    // Update all icon links to ensure browser refreshes them
-    const links = document.querySelectorAll("link[rel*='icon']");
-    links.forEach(link => {
-      const linkElement = link as HTMLLinkElement;
-      const href = linkElement.href;
-      linkElement.href = '';
-      setTimeout(() => { linkElement.href = href + '?v=' + new Date().getTime(); }, 50);
+    // First, remove any existing favicon links
+    const existingLinks = document.querySelectorAll("link[rel*='icon']");
+    existingLinks.forEach(link => {
+      document.head.removeChild(link);
     });
     
-    // Create fallback icon link if none exist
-    if (links.length === 0) {
-      const link = document.createElement('link');
-      link.type = 'image/svg+xml';
-      link.rel = 'icon';
-      link.href = '/src/assets/stargazer-favicon.svg?v=' + new Date().getTime();
-      document.head.appendChild(link);
-    }
+    // Create fresh favicon links with timestamp to force refresh
+    const timestamp = new Date().getTime();
+    
+    // SVG favicon (primary)
+    const svgLink = document.createElement('link');
+    svgLink.type = 'image/svg+xml';
+    svgLink.rel = 'icon';
+    svgLink.href = `/src/assets/stargazer-favicon.svg?v=${timestamp}`;
+    document.head.appendChild(svgLink);
+    
+    // Fallback ICO favicon
+    const icoLink = document.createElement('link');
+    icoLink.type = 'image/x-icon';
+    icoLink.rel = 'alternate icon';
+    icoLink.href = `/favicon.ico?v=${timestamp}`;
+    document.head.appendChild(icoLink);
+    
+    // Apple touch icon
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = `/src/assets/stargazer-favicon.svg?v=${timestamp}`;
+    document.head.appendChild(appleLink);
+    
+    console.log('Favicon updated at:', new Date().toISOString());
   } catch (e) {
     console.error('Error updating favicon:', e);
   }
 };
 
-// Run once DOM is loaded
+// Run immediately
+updateFavicon();
+
+// Also run when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   // Set title again to be absolutely sure
   document.title = 'Stargazer';
-  // Update favicon
+  // Update favicon again
   updateFavicon();
 });
 
-// Dynamically set title when route changes
+// Set title when route changes too
 window.addEventListener('popstate', () => {
   document.title = 'Stargazer';
+});
+
+// Create a MutationObserver to watch for any title changes and override them
+const titleObserver = new MutationObserver(() => {
+  if (document.title !== 'Stargazer') {
+    document.title = 'Stargazer';
+  }
+});
+
+// Start observing title changes
+titleObserver.observe(document.querySelector('title') || document.head, { 
+  subtree: true, 
+  characterData: true, 
+  childList: true 
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
