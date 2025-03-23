@@ -1,69 +1,153 @@
-# Welcome to your Lovable project
 
-## Project info
+# Stargazer Crypto Navigator
 
-**URL**: https://lovable.dev/projects/50422848-26bb-4118-ade3-bf0b3fe75c4f
+![Stargazer Crypto Navigator](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/hero-image.png)
 
-## How can I edit this code?
+A multi-chain blockchain explorer that allows you to analyze and visualize transactions across Ethereum, Bitcoin, Solana, and TON networks.
 
-There are several ways of editing your application.
+## Features
 
-**Use Lovable**
+- **Multi-Chain Support**: Analyze addresses across Ethereum, Bitcoin, Solana, and TON networks with a unified interface.
+- **Transaction Visualization**: See the flow of funds with interactive graph visualizations that highlight connections.
+- **Balance & Asset Details**: Explore complete address balances and held assets with accurate valuations.
+- **Transaction History**: View and filter transaction history for any blockchain address.
+- **Graph Navigation**: Interactive node-based visualization of transaction relationships.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/50422848-26bb-4118-ade3-bf0b3fe75c4f) and start prompting.
+## Technologies
 
-Changes made via Lovable will be committed automatically to this repo.
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui component library
+- React Router
+- Tanstack React Query
+- Cytoscape.js for graph visualization
 
-**Use your preferred IDE**
+## API Keys
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+The application uses various blockchain APIs to fetch data. API keys are configured in `src/utils/config.ts`. You will need to obtain your own API keys for the following services:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Etherscan (Ethereum)
+- Infura (Ethereum)
+- Blockchair (Bitcoin)
+- Helius (Solana)
+- Toncenter (TON)
+- CoinMarketCap (Price data)
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Node.js 16+ and npm
+- Git
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Installation
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/stargazer-crypto-navigator.git
+   cd stargazer-crypto-navigator
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Update API keys:
+   Edit `src/utils/config.ts` and insert your own API keys.
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Open your browser and navigate to `http://localhost:8080`
+
+### Building for Production
+
+To build the application for production:
+
+```bash
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+The built files will be in the `dist` directory.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Deployment
 
-**Use GitHub Codespaces**
+### Static Hosting (Netlify, Vercel, etc.)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Build the project:
+   ```bash
+   npm run build
+   ```
 
-## What technologies are used for this project?
+2. Deploy the `dist` directory to your preferred static hosting service.
 
-This project is built with .
+### Traditional Server
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Build the project:
+   ```bash
+   npm run build
+   ```
 
-## How can I deploy this project?
+2. Copy the contents of the `dist` directory to your web server's public directory.
 
-Simply open [Lovable](https://lovable.dev/projects/50422848-26bb-4118-ade3-bf0b3fe75c4f) and click on Share -> Publish.
+3. Configure your web server to serve the application:
 
-## I want to use a custom domain - is that possible?
+   **Apache (.htaccess)**:
+   ```apache
+   <IfModule mod_rewrite.c>
+     RewriteEngine On
+     RewriteBase /
+     RewriteRule ^index\.html$ - [L]
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteCond %{REQUEST_FILENAME} !-d
+     RewriteRule . /index.html [L]
+   </IfModule>
+   ```
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+   **Nginx**:
+   ```nginx
+   location / {
+     root /path/to/dist;
+     try_files $uri $uri/ /index.html;
+   }
+   ```
+
+## Environment Variables
+
+This project doesn't use environment variables directly. All configuration is done through the `src/utils/config.ts` file.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Etherscan](https://etherscan.io/) - Ethereum blockchain explorer
+- [Blockchair](https://blockchair.com/) - Bitcoin blockchain explorer
+- [Solscan](https://solscan.io/) - Solana blockchain explorer
+- [TON Explorer](https://explorer.ton.org/) - The Open Network blockchain explorer
+- [CoinGecko](https://www.coingecko.com/) - Cryptocurrency price data
+- [Cytoscape.js](https://js.cytoscape.org/) - Graph visualization library
+
+## Screenshots
+
+### Home Page
+![Home](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-home.png)
+
+### Address Details
+![Address Details](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-address.png)
+
+### Transaction Graph
+![Transaction Graph](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-graph.png)
