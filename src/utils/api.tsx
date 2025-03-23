@@ -1,7 +1,7 @@
-
 import { NetworkType } from "@/components/NetworkSelector";
 import { Asset } from "@/components/AssetList";
 import { Transaction } from "@/components/TransactionGraph";
+import { ApiKeyType, getApiKey } from "@/components/ApiKeyManager";
 
 interface AddressData {
   balance: {
@@ -14,13 +14,35 @@ interface AddressData {
 
 /**
  * Fetch address data (balance, assets, transactions) from the appropriate API
- * This is a mock implementation that returns dummy data
+ * This function tries to use real API keys if available,
+ * otherwise falls back to mock data
  */
 export const fetchAddressData = async (
   address: string,
   network: NetworkType
 ): Promise<AddressData> => {
-  // In a real app, this would call different APIs based on the network
+  // Get the appropriate API key based on network
+  const apiKeyType: ApiKeyType = 
+    network === 'ethereum' ? 'etherscan' :
+    network === 'bitcoin' ? 'blockstream' :
+    network === 'solana' ? 'solana' : 'toncenter';
+  
+  const apiKey = getApiKey(apiKeyType);
+  
+  // If API key is available, try to fetch real data
+  if (apiKey) {
+    try {
+      // Call the appropriate API based on network
+      return await fetchRealData(address, network, apiKey);
+    } catch (error) {
+      console.error(`Error fetching real data for ${network}:`, error);
+      // Fall back to mock data on error
+      return generateMockData(address, network);
+    }
+  }
+  
+  // If no API key, use mock data
+  console.log(`No API key found for ${network}, using mock data`);
   
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -29,6 +51,56 @@ export const fetchAddressData = async (
   const mockData = generateMockData(address, network);
   
   return mockData;
+};
+
+/**
+ * Fetch real data from blockchain APIs
+ * This is where you would implement the actual API calls
+ */
+const fetchRealData = async (
+  address: string,
+  network: NetworkType,
+  apiKey: string
+): Promise<AddressData> => {
+  // Implementation for real API calls
+  switch (network) {
+    case 'ethereum':
+      // Example Etherscan API call
+      const ethResponse = await fetch(
+        `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${apiKey}`
+      );
+      const ethData = await ethResponse.json();
+      
+      // Process the response and convert to AddressData format
+      // This is a placeholder and needs to be implemented properly
+      if (ethData.status === '1') {
+        // For now, we're still returning mock data but in the future
+        // you would parse the real API response
+        return generateMockData(address, network);
+      }
+      throw new Error(`Etherscan API error: ${ethData.message}`);
+      
+    case 'bitcoin':
+      // Example Blockstream API call (most don't require API keys)
+      const btcResponse = await fetch(
+        `https://blockstream.info/api/address/${address}`
+      );
+      // Process BTC data...
+      return generateMockData(address, network);
+      
+    case 'solana':
+      // Example Solana API call
+      // Process Solana data...
+      return generateMockData(address, network);
+      
+    case 'ton':
+      // Example TON API call
+      // Process TON data...
+      return generateMockData(address, network);
+      
+    default:
+      throw new Error(`Unsupported network: ${network}`);
+  }
 };
 
 // Helper function to generate mock data
