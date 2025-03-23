@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight, ChevronDown, ChevronUp, SortAsc } from "l
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export interface Asset {
   symbol: string;
@@ -19,6 +20,27 @@ export interface Asset {
 interface AssetListProps {
   assets: Asset[];
   isLoading?: boolean;
+}
+
+// Helper function to get correct crypto logo URLs
+const getCryptoLogoUrl = (symbol: string): string => {
+  const tokenMap: Record<string, string> = {
+    'ETH': 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+    'BTC': 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+    'USDT': 'https://cryptologos.cc/logos/tether-usdt-logo.png',
+    'USDC': 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+    'DAI': 'https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png',
+    'LINK': 'https://cryptologos.cc/logos/chainlink-link-logo.png',
+    'SOL': 'https://cryptologos.cc/logos/solana-sol-logo.png',
+    'AAVE': 'https://cryptologos.cc/logos/aave-aave-logo.png',
+    'UNI': 'https://cryptologos.cc/logos/uniswap-uni-logo.png',
+    'TON': 'https://cryptologos.cc/logos/toncoin-ton-logo.png',
+    'SHIB': 'https://cryptologos.cc/logos/shiba-inu-shib-logo.png',
+    'WETH': 'https://cryptologos.cc/logos/ethereum-eth-logo.png', // Wrapped ETH uses ETH logo
+    'cbBTC': 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', // Coinbase wrapped BTC uses BTC logo
+  };
+  
+  return tokenMap[symbol] || '';
 }
 
 const AssetList: React.FC<AssetListProps> = ({ assets, isLoading = false }) => {
@@ -127,41 +149,48 @@ const AssetList: React.FC<AssetListProps> = ({ assets, isLoading = false }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedAssets.map((asset) => (
-                  <TableRow key={asset.symbol} className="border-stargazer-muted/20">
-                    <TableCell className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400/20 to-violet-600/20 flex items-center justify-center overflow-hidden">
-                          {asset.icon ? (
-                            <img src={asset.icon} alt={asset.symbol} className="w-6 h-6" />
-                          ) : (
-                            <div className="text-xl font-bold text-violet-400">{asset.symbol.charAt(0)}</div>
-                          )}
+                {sortedAssets.map((asset) => {
+                  // Get logo URL from our helper or use provided icon
+                  const logoUrl = asset.icon || getCryptoLogoUrl(asset.symbol);
+                  
+                  return (
+                    <TableRow key={asset.symbol} className="border-stargazer-muted/20">
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400/20 to-violet-600/20 border border-violet-500/20">
+                            {logoUrl ? (
+                              <AvatarImage src={logoUrl} alt={asset.symbol} className="p-1.5" />
+                            ) : (
+                              <AvatarFallback className="text-violet-400 bg-transparent">
+                                {asset.symbol.charAt(0)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{asset.symbol}</div>
+                            <div className="text-sm text-white/60">{asset.name}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{asset.symbol}</div>
-                          <div className="text-sm text-white/60">{asset.name}</div>
+                      </TableCell>
+                      <TableCell className="text-right py-4">
+                        <div className="font-medium">{asset.balance}</div>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className={`text-sm ${asset.change24h >= 0 ? 'text-stargazer-green' : 'text-stargazer-red'}`}>
+                            {asset.change24h >= 0 ? (
+                              <ArrowUpRight className="w-3 h-3 inline mr-0.5" />
+                            ) : (
+                              <ArrowDownRight className="w-3 h-3 inline mr-0.5" />
+                            )}
+                            {Math.abs(asset.change24h).toFixed(2)}%
+                          </span>
+                          <span className="text-sm text-white/80">
+                            ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right py-4">
-                      <div className="font-medium">{asset.balance}</div>
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className={`text-sm ${asset.change24h >= 0 ? 'text-stargazer-green' : 'text-stargazer-red'}`}>
-                          {asset.change24h >= 0 ? (
-                            <ArrowUpRight className="w-3 h-3 inline mr-0.5" />
-                          ) : (
-                            <ArrowDownRight className="w-3 h-3 inline mr-0.5" />
-                          )}
-                          {Math.abs(asset.change24h).toFixed(2)}%
-                        </span>
-                        <span className="text-sm text-white/80">
-                          ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             
