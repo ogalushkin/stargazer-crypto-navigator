@@ -1,10 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import NetworkSelector from './NetworkSelector';
+import NetworkSelector, { NetworkType } from './NetworkSelector';
 import ApiKeyManager from './ApiKeyManager';
 
 const Header: React.FC = () => {
+  const [selectedNetwork, setSelectedNetwork] = useState<NetworkType>('ethereum');
+
+  const handleNetworkChange = (network: NetworkType) => {
+    setSelectedNetwork(network);
+  };
+
   return (
     <header className="py-6 border-b border-stargazer-muted/20">
       <div className="flex items-center justify-between">
@@ -18,7 +24,10 @@ const Header: React.FC = () => {
         </Link>
         
         <div className="flex items-center space-x-2">
-          <NetworkSelector />
+          <NetworkSelector 
+            selectedNetwork={selectedNetwork} 
+            onNetworkChange={handleNetworkChange}
+          />
           <ApiKeyManager />
         </div>
       </div>
