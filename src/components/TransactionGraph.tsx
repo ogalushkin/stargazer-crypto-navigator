@@ -219,27 +219,28 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           {
             selector: 'node',
             style: {
-              'background-color': '#2D2D3D',
-              'border-color': '#454560',
+              'background-color': '#000000', // Black fill for nodes
+              'border-color': '#454560',     // Subtle border
               'border-width': 1,
               'width': 40,
               'height': 40,
               'label': 'data(label)',
-              'color': '#E2E8F0',
+              'color': '#FFFFFF',            // White text
               'text-background-color': '#1A1A25',
               'text-background-opacity': 0.7,
               'text-background-padding': '2px',
               'text-valign': 'bottom',
               'text-halign': 'center',
               'font-size': '10px',
-              'text-margin-y': 6
+              'text-margin-y': 6,
+              'font-family': 'system-ui, -apple-system, sans-serif' // Clean font
             }
           },
           {
             selector: 'node[isTarget]',
             style: {
-              'background-color': '#8B5CF6',
-              'border-color': '#A78BFA',
+              'background-color': '#000000',
+              'border-color': '#9b87f5',    // Purple border for target node
               'border-width': 2,
               'width': 50,
               'height': 50,
@@ -251,38 +252,42 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             selector: 'edge',
             style: {
               'width': 'data(width)',
-              'line-color': '#EA384C', // Default red for outgoing
-              'target-arrow-color': '#EA384C',
+              'line-color': '#D946EF',       // Fuchsia for outgoing
+              'target-arrow-color': '#D946EF',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'label': '',  // Don't show labels on edges, we'll use tooltips
+              'label': '',                    // No labels on edges
               'font-size': '8px',
               'color': '#E2E8F0',
               'text-background-color': '#1A1A25',
               'text-background-opacity': 0.7,
               'text-background-padding': '2px',
-              'text-rotation': 'autorotate'
+              'text-rotation': 'autorotate',
+              'arrow-scale': 1.2,
+              'line-style': 'solid',
+              'target-endpoint': '0deg',
+              'source-endpoint': '180deg'
             }
           },
           {
             selector: 'edge[isIncoming]',
             style: {
-              'line-color': '#10B981', // Modern green for incoming
-              'target-arrow-color': '#10B981'
+              'line-color': '#0EA5E9',       // Teal blue for incoming
+              'target-arrow-color': '#0EA5E9'
             }
           },
           {
             selector: 'node[isIncoming]',
             style: {
-              'background-color': '#065F46',
-              'border-color': '#10B981'
+              'background-color': '#000000',
+              'border-color': '#0EA5E9'       // Blue border for incoming nodes
             }
           },
           {
             selector: 'node[isOutgoing]',
             style: {
-              'background-color': '#7F1D1D',
-              'border-color': '#EF4444'
+              'background-color': '#000000',
+              'border-color': '#D946EF'       // Pink border for outgoing nodes
             }
           }
         ],
@@ -292,37 +297,23 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // Add tooltips to edges with enhanced styling
+      // Add enhanced tooltips showing only the amount
       cy.on('mouseover', 'edge', function(event) {
         const edge = event.target;
-        const sourceNode = edge.source().data('label');
-        const targetNode = edge.target().data('label');
         const value = edge.data('label');
         const direction = edge.data('isIncoming') ? 'Incoming' : 'Outgoing';
-        const color = edge.data('isIncoming') ? '#10B981' : '#EA384C'; // Match edge colors
+        const color = edge.data('isIncoming') ? '#0EA5E9' : '#D946EF';
         
-        // Create enhanced tooltip
+        // Create minimalist tooltip
         edge.popperRefObj = edge.popper({
           content: () => {
             const content = document.createElement('div');
             content.innerHTML = `
               <div style="background-color: #1A1A25; color: white; padding: 8px 12px; border-radius: 6px; 
-                          border: 1px solid #454560; font-size: 12px; max-width: 220px;
-                          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
-                <div style="margin-bottom: 6px; display: flex; align-items: center;">
-                  <span style="display: inline-block; width: 8px; height: 8px; 
-                               background-color: ${color}; border-radius: 50%; margin-right: 6px;"></span>
-                  <span style="font-weight: 600;">${direction} Transaction</span>
-                </div>
-                <div style="margin-bottom: 6px;">
-                  <span style="color: #A1A1AA;">Amount:</span> 
-                  <span style="font-weight: 600;">${value}</span>
-                </div>
-                <div style="font-size: 11px; color: #A1A1AA; display: flex; align-items: center;">
-                  <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${sourceNode} → ${targetNode}
-                  </div>
-                </div>
+                          border: 1px solid ${color}; font-size: 12px; font-weight: 500; 
+                          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); text-align: center;
+                          font-family: system-ui, -apple-system, sans-serif;">
+                ${value}
               </div>
             `;
             document.body.appendChild(content);
@@ -335,6 +326,12 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
                 name: 'offset',
                 options: {
                   offset: [0, 8],
+                },
+              },
+              {
+                name: 'preventOverflow',
+                options: {
+                  padding: 8,
                 },
               },
             ],
@@ -418,7 +415,6 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         } as cytoscape.LayoutOptions);
         
         layout.run();
-        console.log("Arkham-style layout applied successfully");
         
         // Apply final adjustments and fit to container
         cy.fit(undefined, 50);
@@ -563,11 +559,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         <div className="relative w-full h-full" ref={containerRef}>
           <div className="absolute bottom-3 left-3 flex items-center gap-4 z-10 p-2 bg-stargazer-card/80 rounded-md">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-10B981 rounded-full mr-2"></div>
+              <div className="w-3 h-3 bg-[#0EA5E9] rounded-full mr-2"></div>
               <span className="text-xs text-white/70">Incoming</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-EA384C rounded-full mr-2"></div>
+              <div className="w-3 h-3 bg-[#D946EF] rounded-full mr-2"></div>
               <span className="text-xs text-white/70">Outgoing</span>
             </div>
           </div>

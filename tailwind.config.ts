@@ -83,8 +83,8 @@ export default {
 					accent: '#8B5CF6',
 					muted: '#2D2D3D',
 					text: '#E2E8F0',
-					red: '#EA384C',
-					green: '#10B981',
+					red: '#D946EF', // Updated to fuchsia pink
+					green: '#0EA5E9', // Updated to teal blue
 				}
 			},
 			borderRadius: {
