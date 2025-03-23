@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
@@ -147,7 +146,7 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
       const cy = cytoscape({
         container: containerRef.current,
         elements: elements,
-        style: getCytoscapeStyles(),
+        style: getCytoscapeStyles() as cytoscape.Stylesheet[],
         layout: getPresetLayoutConfig()
       });
 

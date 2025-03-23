@@ -1,3 +1,4 @@
+
 import { CATEGORY_COLORS, INCOMING_COLOR, OUTGOING_COLOR, SELF_TRANSFER_COLOR } from '@/utils/graphUtils';
 
 // Define the cytoscape styles in a separate file to keep the main component cleaner
@@ -18,7 +19,7 @@ export const getCytoscapeStyles = () => {
         'text-background-opacity': 0.7,
         'text-background-padding': '2px',
         'text-valign': 'bottom',
-        'text-halign': 'center',
+        'text-halign': 'center' as const,
         'font-size': '11px',
         'text-margin-y': 6,
         'font-family': 'system-ui, -apple-system, sans-serif',
