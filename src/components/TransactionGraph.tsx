@@ -7,14 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
 
-// Make sure the layout is registered only once
-if (!cytoscape.layouts || !cytoscape.layouts.hasOwnProperty('coseBilkent')) {
-  try {
+// Register the layout extension only once
+try {
+  // Check if the layout has been registered to avoid duplicate registration
+  if (typeof coseBilkent === 'function' && !cytoscape.prototype.hasInitialised) {
     cytoscape.use(coseBilkent);
+    // Mark as initialized to avoid multiple registrations
+    cytoscape.prototype.hasInitialised = true;
     console.log("coseBilkent layout registered successfully");
-  } catch (e) {
-    console.error("Failed to register coseBilkent layout:", e);
   }
+} catch (e) {
+  console.error("Failed to register coseBilkent layout:", e);
 }
 
 export interface Transaction {
@@ -206,30 +209,29 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
       });
 
       // After initialization, run the more complex layout
-      if (cy.layout && typeof cy.layout === 'function') {
-        try {
-          cy.layout({
-            name: 'coseBilkent',
-            animate: true,
-            animationDuration: 500,
-            padding: 50,
-            fit: true,
-            nodeDimensionsIncludeLabels: true,
-            randomize: false,
-            nodeRepulsion: 8000,
-            idealEdgeLength: 100,
-            edgeElasticity: 0.45,
-            nestingFactor: 0.1,
-            gravity: 0.25,
-            numIter: 2500
-          }).run();
-          
-          console.log("coseBilkent layout run successfully");
-        } catch (layoutError) {
-          console.error("Error running coseBilkent layout:", layoutError);
-          // Fallback to grid layout if coseBilkent fails
-          cy.layout({ name: 'grid', fit: true }).run();
-        }
+      try {
+        const layout = cy.layout({
+          name: 'coseBilkent',
+          fit: true,
+          padding: 50,
+          // TypeScript doesn't know about additional coseBilkent-specific options
+          // so we need to use type assertion
+          nodeDimensionsIncludeLabels: true,
+          randomize: false,
+          nodeRepulsion: 8000,
+          idealEdgeLength: 100,
+          edgeElasticity: 0.45,
+          nestingFactor: 0.1,
+          gravity: 0.25,
+          numIter: 2500
+        } as cytoscape.LayoutOptions);
+        
+        layout.run();
+        console.log("coseBilkent layout run successfully");
+      } catch (layoutError) {
+        console.error("Error running coseBilkent layout:", layoutError);
+        // Fallback to grid layout if coseBilkent fails
+        cy.layout({ name: 'grid', fit: true }).run();
       }
 
       // Add click event to nodes
