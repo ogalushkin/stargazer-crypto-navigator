@@ -142,10 +142,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Screenshots
 
 ### Home Page
-![Home](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-home.png)
+![Home](https://github.com/ogalushkin/stargazer-crypto-navigator/raw/main/public/screenshot-home.png)
 
 ### Address Details
 ![Address Details](https://github.com/ogalushkin/stargazer-crypto-navigator/raw/main/public/screenshot-address.png)
 
 ### Transaction Graph
-![Transaction Graph](https://github.com/your-username/stargazer-crypto-navigator/raw/main/public/screenshot-graph.png)
+![Transaction Graph](https://github.com/ogalushkin/stargazer-crypto-navigator/raw/main/public/screenshot-graph.png)
