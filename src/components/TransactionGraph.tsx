@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -263,9 +264,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'font-size': '12px',
               'text-background-color': '#4C1D95',
               'z-index': 10, // Ensure target node is on top
-              'shadow-blur': 15,
-              'shadow-color': '#8B5CF6',
-              'shadow-opacity': 0.3
+              'shadowBlur': 15,
+              'shadowColor': '#8B5CF6',
+              'shadowOpacity': 0.3
             }
           },
           {
@@ -288,11 +289,11 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'target-endpoint': '0deg',
               'source-endpoint': '180deg',
               'z-index': 1,
-              'shadow-blur': 10,
-              'shadow-color': '#D946EF',
-              'shadow-opacity': 0.2,
-              'shadow-offset-x': 0,
-              'shadow-offset-y': 0
+              'shadowBlur': 10,
+              'shadowColor': '#D946EF',
+              'shadowOpacity': 0.2,
+              'shadowOffsetX': 0,
+              'shadowOffsetY': 0
             }
           },
           {
@@ -300,7 +301,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             style: {
               'line-color': '#0EA5E9',       // Teal blue for incoming
               'target-arrow-color': '#0EA5E9',
-              'shadow-color': '#0EA5E9'       // Matching shadow color
+              'shadowColor': '#0EA5E9'       // Matching shadow color
             }
           },
           {
@@ -308,9 +309,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             style: {
               'background-color': '#000000',
               'border-color': '#0EA5E9',      // Blue border for incoming nodes
-              'shadow-color': '#0EA5E9',
-              'shadow-opacity': 0.15,
-              'shadow-blur': 8
+              'shadowColor': '#0EA5E9',
+              'shadowOpacity': 0.15,
+              'shadowBlur': 8
             }
           },
           {
@@ -318,9 +319,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             style: {
               'background-color': '#000000',
               'border-color': '#D946EF',      // Pink border for outgoing nodes
-              'shadow-color': '#D946EF',
-              'shadow-opacity': 0.15,
-              'shadow-blur': 8
+              'shadowColor': '#D946EF',
+              'shadowOpacity': 0.15,
+              'shadowBlur': 8
             }
           }
         ],
