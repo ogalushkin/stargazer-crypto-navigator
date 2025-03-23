@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
+  const cytoscapeRef = useRef<any>(null);
   
   // Filter and sort state
   const [filters, setFilters] = useState<FilterState>({
@@ -62,28 +64,42 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     address,
     network,
     transactionsCount: transactions.length,
+    processedData: {
+      nodes: processedData.nodes.length,
+      edges: processedData.edges.length
+    },
     fullPage
   });
 
-  // Graph control functions - these are now passed to the CytoscapeGraph component
+  // Graph control functions
   const zoomIn = () => {
-    // Implemented in CytoscapeGraph
+    if (cytoscapeRef.current?.zoomIn) {
+      cytoscapeRef.current.zoomIn();
+    }
   };
 
   const zoomOut = () => {
-    // Implemented in CytoscapeGraph
+    if (cytoscapeRef.current?.zoomOut) {
+      cytoscapeRef.current.zoomOut();
+    }
   };
 
   const fitGraph = () => {
-    // Implemented in CytoscapeGraph
+    if (cytoscapeRef.current?.fitGraph) {
+      cytoscapeRef.current.fitGraph();
+    }
   };
 
   const rebuildGraph = () => {
-    // Implemented in CytoscapeGraph
+    if (cytoscapeRef.current?.rebuildGraph) {
+      cytoscapeRef.current.rebuildGraph();
+    }
   };
 
   const exportGraph = () => {
-    // Implemented in CytoscapeGraph
+    if (cytoscapeRef.current?.exportGraph) {
+      cytoscapeRef.current.exportGraph();
+    }
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -170,16 +186,15 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
       
       <CardContent className={`relative ${fullPage ? 'h-[calc(100vh-270px)]' : 'h-[424px]'} p-0 overflow-hidden grid ${fullPage ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'}`}>
         <div className={`relative ${fullPage ? 'w-full h-full col-span-1 lg:col-span-2' : 'w-full h-full'}`}>
-          {processedData.nodes.length > 0 && (
-            <CytoscapeGraph 
-              address={address}
-              network={network as NetworkType}
-              nodes={processedData.nodes}
-              edges={processedData.edges}
-              selectedTransaction={selectedTransaction}
-              onSelectTransaction={handleTransactionSelect}
-            />
-          )}
+          <CytoscapeGraph 
+            ref={cytoscapeRef}
+            address={address}
+            network={network as NetworkType}
+            nodes={processedData.nodes}
+            edges={processedData.edges}
+            selectedTransaction={selectedTransaction}
+            onSelectTransaction={handleTransactionSelect}
+          />
         </div>
         
         {fullPage && (

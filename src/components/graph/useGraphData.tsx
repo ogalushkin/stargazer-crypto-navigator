@@ -24,6 +24,16 @@ export function useGraphData(
   useEffect(() => {
     // Process transactions into nodes and edges
     const processGraphData = () => {
+      if (!address || transactions.length === 0) {
+        return { nodes: [], edges: [] };
+      }
+      
+      console.log("Processing graph data for", {
+        address,
+        transactionsCount: transactions.length,
+        filters
+      });
+      
       // Apply time range filter
       let filteredTransactions = [...transactions];
       const now = Date.now();
@@ -62,8 +72,9 @@ export function useGraphData(
         ? filteredTransactions.slice(0, MAX_TRANSACTIONS)
         : filteredTransactions;
       
-      console.log("Processing graph data with transactions:", limitedTransactions.length);
+      console.log("Using limited transactions:", limitedTransactions.length);
       
+      // Create target node
       const nodes: GraphNode[] = [{ 
         id: address, 
         label: shortenAddress(address), 
@@ -75,6 +86,11 @@ export function useGraphData(
       
       // First pass: identify all nodes
       limitedTransactions.forEach(tx => {
+        if (!tx.from || !tx.to) {
+          console.warn("Skipping transaction with missing from/to", tx);
+          return;
+        }
+        
         const fromIsTarget = tx.from === address;
         const toIsTarget = tx.to === address;
         const isSelfTransfer = tx.from === tx.to;
@@ -108,8 +124,13 @@ export function useGraphData(
       
       // Second pass: create all individual edges (one per transaction)
       limitedTransactions.forEach((tx, index) => {
+        if (!tx.from || !tx.to || !tx.hash) {
+          console.warn("Skipping transaction with missing data", tx);
+          return;
+        }
+        
         // Extract numerical value from transaction
-        const valueStr = tx.value.split(' ')[0]; // Extracts just the number part
+        const valueStr = tx.value?.split(' ')[0] || '0'; // Extracts just the number part
         const numValue = parseFloat(valueStr) || 0;
         
         // Add individual edge for this transaction
@@ -120,7 +141,7 @@ export function useGraphData(
           id: `e${index}-${tx.hash.substring(0, 8)}`,
           source: tx.from,
           target: tx.to,
-          label: tx.value,
+          label: tx.value || '0',
           value: numValue,
           isIncoming,
           isSelfTransfer,
@@ -136,7 +157,7 @@ export function useGraphData(
         const category = node.category || 'uncategorized';
         const categoryFilter = filters.categoryFilters[category];
         
-        if (!categoryFilter.enabled) return false;
+        if (!categoryFilter || !categoryFilter.enabled) return false;
         
         // Filter by flow direction
         if (categoryFilter.flow === 'in' && !node.isIncoming) return false;
@@ -167,17 +188,17 @@ export function useGraphData(
         
         // Check source category filter
         const sourceCategoryFilter = filters.categoryFilters[sourceCategory];
-        if (!sourceCategoryFilter.enabled) return false;
+        if (!sourceCategoryFilter?.enabled) return false;
         
         // Check target category filter
         const targetCategoryFilter = filters.categoryFilters[targetCategory];
-        if (!targetCategoryFilter.enabled) return false;
+        if (!targetCategoryFilter?.enabled) return false;
         
         // Filter by flow direction for self transfers
         if (edge.isSelfTransfer) {
           // Only show self transfers if at least one category has self flow enabled
           const selfFlowEnabled = Object.values(filters.categoryFilters).some(
-            cf => cf.enabled && cf.flow === 'self'
+            cf => cf?.enabled && cf.flow === 'self'
           );
           return selfFlowEnabled;
         }

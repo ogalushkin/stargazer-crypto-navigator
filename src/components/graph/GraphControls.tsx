@@ -7,7 +7,7 @@ import {
   TooltipTrigger, 
   TooltipContent 
 } from "@/components/ui/tooltip";
-import { ZoomIn, ZoomOut, RefreshCcw, Download, Eye, EyeOff } from "lucide-react";
+import { ZoomIn, ZoomOut, RefreshCcw, Download, Eye, EyeOff, MaximizeIcon } from "lucide-react";
 
 interface GraphControlsProps {
   showFilters: boolean;
@@ -111,10 +111,7 @@ const GraphControls: React.FC<GraphControlsProps> = ({
               className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
               onClick={fitGraph}
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 21V14M3 14H10M3 14L9 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M21 3H14M14 3V10M14 3L20 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <MaximizeIcon className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
