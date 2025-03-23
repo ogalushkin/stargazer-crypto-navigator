@@ -159,6 +159,12 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     }
   };
 
+  const fitGraph = () => {
+    if (cyRef.current) {
+      cyRef.current.fit(undefined, 50);
+    }
+  };
+
   // Calculate edge width based on transaction value using logarithmic scale
   const calculateEdgeWidth = (value: number, edges: GraphEdge[]): number => {
     if (value <= 0) return 1;
@@ -169,7 +175,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const maxValue = Math.max(...values);
     
     // Use logarithmic scaling for better visualization
-    // Map to range 1px - 8px
+    // Map to range 1.5px - 8px for better visibility
     if (minValue === maxValue) return 3; // Default midpoint if all values are the same
     
     // Logarithmic scaling - better for crypto values with high variability
@@ -177,9 +183,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const logMax = Math.log(maxValue);
     const logValue = Math.log(Math.max(0.000001, value));
     
-    // Scale to 1-8px range
+    // Scale to 1.5-8px range
     const normalizedValue = (logValue - logMin) / (logMax - logMin);
-    return 1 + normalizedValue * 7; // Scale to range 1-8px
+    return 1.5 + normalizedValue * 6.5; // Scale to range 1.5-8px
   };
 
   useEffect(() => {
@@ -190,7 +196,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const { nodes, edges } = processGraphData();
 
     try {
-      // Initialize cytoscape with a basic layout first
+      // Initialize cytoscape with a layout that immediately positions nodes
       const cy = cytoscape({
         container: containerRef.current,
         elements: [
@@ -201,7 +207,13 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               isTarget: node.isTarget || false,
               isIncoming: node.isIncoming || false,
               isOutgoing: node.isOutgoing || false
-            }
+            },
+            // Pre-position nodes for immediate visual layout
+            position: node.isTarget ? 
+              { x: 0, y: 0 } : // Center for target node
+              node.isIncoming ? 
+                { x: -250 + (Math.random() * 50), y: -100 + (Math.random() * 200) } : // Left for incoming
+                { x: 250 - (Math.random() * 50), y: -100 + (Math.random() * 200) } // Right for outgoing
           })),
           ...edges.map(edge => ({
             data: { 
@@ -222,8 +234,8 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'background-color': '#000000', // Black fill for nodes
               'border-color': '#454560',     // Subtle border
               'border-width': 1,
-              'width': 40,
-              'height': 40,
+              'width': 42,
+              'height': 42,
               'label': 'data(label)',
               'color': '#FFFFFF',            // White text
               'text-background-color': '#1A1A25',
@@ -231,9 +243,12 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'text-background-padding': '2px',
               'text-valign': 'bottom',
               'text-halign': 'center',
-              'font-size': '10px',
+              'font-size': '11px',
               'text-margin-y': 6,
-              'font-family': 'system-ui, -apple-system, sans-serif' // Clean font
+              'font-family': 'system-ui, -apple-system, sans-serif', // Clean font
+              'text-outline-width': 1,
+              'text-outline-color': '#131118',
+              'text-outline-opacity': 0.8
             }
           },
           {
@@ -242,10 +257,15 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'background-color': '#000000',
               'border-color': '#9b87f5',    // Purple border for target node
               'border-width': 2,
-              'width': 50,
-              'height': 50,
+              'width': 55,
+              'height': 55,
               'font-weight': 'bold',
-              'text-background-color': '#4C1D95'
+              'font-size': '12px',
+              'text-background-color': '#4C1D95',
+              'z-index': 10, // Ensure target node is on top
+              'shadow-blur': 15,
+              'shadow-color': '#8B5CF6',
+              'shadow-opacity': 0.3
             }
           },
           {
@@ -263,45 +283,57 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'text-background-opacity': 0.7,
               'text-background-padding': '2px',
               'text-rotation': 'autorotate',
-              'arrow-scale': 1.2,
+              'arrow-scale': 1.3,
               'line-style': 'solid',
               'target-endpoint': '0deg',
-              'source-endpoint': '180deg'
+              'source-endpoint': '180deg',
+              'z-index': 1,
+              'shadow-blur': 10,
+              'shadow-color': '#D946EF',
+              'shadow-opacity': 0.2,
+              'shadow-offset-x': 0,
+              'shadow-offset-y': 0
             }
           },
           {
             selector: 'edge[isIncoming]',
             style: {
               'line-color': '#0EA5E9',       // Teal blue for incoming
-              'target-arrow-color': '#0EA5E9'
+              'target-arrow-color': '#0EA5E9',
+              'shadow-color': '#0EA5E9'       // Matching shadow color
             }
           },
           {
             selector: 'node[isIncoming]',
             style: {
               'background-color': '#000000',
-              'border-color': '#0EA5E9'       // Blue border for incoming nodes
+              'border-color': '#0EA5E9',      // Blue border for incoming nodes
+              'shadow-color': '#0EA5E9',
+              'shadow-opacity': 0.15,
+              'shadow-blur': 8
             }
           },
           {
             selector: 'node[isOutgoing]',
             style: {
               'background-color': '#000000',
-              'border-color': '#D946EF'       // Pink border for outgoing nodes
+              'border-color': '#D946EF',      // Pink border for outgoing nodes
+              'shadow-color': '#D946EF',
+              'shadow-opacity': 0.15,
+              'shadow-blur': 8
             }
           }
         ],
         layout: {
-          name: 'preset', // Start with a preset layout for positioning
+          name: 'preset', // Use preset for initial positioning
           fit: true
         }
       });
 
-      // Add enhanced tooltips showing only the amount
+      // Set up tooltips on hover - show only the transaction amount
       cy.on('mouseover', 'edge', function(event) {
         const edge = event.target;
-        const value = edge.data('label');
-        const direction = edge.data('isIncoming') ? 'Incoming' : 'Outgoing';
+        const value = edge.data('label'); // Transaction amount
         const color = edge.data('isIncoming') ? '#0EA5E9' : '#D946EF';
         
         // Create minimalist tooltip
@@ -349,39 +381,13 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // Implement Arkham-style layout with incoming nodes on left, target in center, outgoing on right
+      // Add a more sophisticated layout logic for better immediate visualization
       try {
-        // First position nodes in general areas
-        nodes.forEach(node => {
-          const nodeElement = cy.getElementById(node.id);
-          
-          if (node.isTarget) {
-            // Center position for target node
-            nodeElement.position({ x: 0, y: 0 });
-          } else if (node.isIncoming) {
-            // Left side for incoming nodes (random y for distribution)
-            nodeElement.position({ 
-              x: -250 + (Math.random() * 100), 
-              y: Math.random() * 400 - 200 
-            });
-          } else {
-            // Right side for outgoing nodes (random y for distribution)
-            nodeElement.position({ 
-              x: 250 - (Math.random() * 100), 
-              y: Math.random() * 400 - 200 
-            });
-          }
-        });
-        
-        // Run the coseBilkent layout with constraints to maintain the left/right grouping
+        // Apply coseBilkent layout with constraints to maintain the left/right grouping
         const layout = cy.layout({
           name: 'coseBilkent',
           fit: true,
           padding: 50,
-          // Use specific positioning to maintain grouping
-          // Incoming left, target center, outgoing right
-          animate: false,
-          randomize: false,
           nodeDimensionsIncludeLabels: true,
           nodeRepulsion: 8000,
           idealEdgeLength: 150,
@@ -389,28 +395,22 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           nestingFactor: 0.1,
           gravity: 0.25,
           // Fix nodes in their respective hemispheres (left/right)
+          // Using preset positions as a starting point
+          randomize: false,
+          animate: false,
+          // Keep the target node centered
           position: function(node) {
-            // Get the pre-positioned coordinates
-            const pos = node.position();
-            
-            // Keep the target node centered
             if (node.data('isTarget')) {
               return { x: 0, y: 0 };
             }
             
-            // Lock incoming nodes to left hemisphere
+            // Keep incoming nodes to the left
             if (node.data('isIncoming')) {
-              return { x: Math.min(pos.x, -50), y: pos.y };
+              return { x: -200 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
             }
             
-            // Lock outgoing nodes to right hemisphere
-            return { x: Math.max(pos.x, 50), y: pos.y };
-          },
-          // Prevent too much movement during layout calculation
-          boundingBox: {
-            x1: -400, y1: -300,
-            x2: 400, y2: 300,
-            w: 800, h: 600
+            // Keep outgoing nodes to the right
+            return { x: 200 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
           }
         } as cytoscape.LayoutOptions);
         
@@ -420,25 +420,40 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         cy.fit(undefined, 50);
       } catch (layoutError) {
         console.error("Error running coseBilkent layout:", layoutError);
-        // Fallback to simpler layout if coseBilkent fails
+        // Fallback to concentric layout if coseBilkent fails
         const fallbackLayout = cy.layout({ 
           name: 'concentric',
           concentric: function(node) {
             if (node.data('isTarget')) return 10;
-            if (node.data('isIncoming')) return 8;
-            return 5;
+            if (node.data('isIncoming')) return 5;
+            return 0;
           },
-          levelWidth: function() { return 1; },
+          levelWidth: function() { return 2; },
+          minNodeSpacing: 50,
           animate: false
         });
         
         fallbackLayout.run();
       }
 
-      // Add click event to nodes
+      // Add click event to nodes for navigation
       cy.on('tap', 'node', function(evt) {
         const nodeId = evt.target.id();
         handleNodeClick(nodeId);
+      });
+
+      // Set cursor style when hovering over nodes
+      cy.on('mouseover', 'node', function() {
+        containerRef.current!.style.cursor = 'pointer';
+      });
+      
+      cy.on('mouseout', 'node', function() {
+        containerRef.current!.style.cursor = 'default';
+      });
+
+      // Set cursor style when hovering over edges
+      cy.on('mouseover', 'edge', function() {
+        containerRef.current!.style.cursor = 'default';
       });
 
       cyRef.current = cy;
@@ -545,6 +560,27 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               </TooltipTrigger>
               <TooltipContent side="top">
                 <p>Zoom Out</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
+                  onClick={fitGraph}
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 21V14M3 14H10M3 14L9 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 3H14M14 3V10M14 3L20 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Fit to Screen</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
