@@ -67,7 +67,8 @@ export function useCytoscapeGraph(
       // Clean up previous instance if it exists
       if (cyRef.current) {
         cyRef.current.destroy();
-        cyRef.current = null;
+        // No need to explicitly set cyRef.current = null
+        // as this will be overwritten below when we create a new instance
       }
 
       // Create graph elements 
@@ -126,6 +127,7 @@ export function useCytoscapeGraph(
         }
       }
 
+      // Properly set the cytoscape instance
       cyRef.current = cy;
       console.log("Cytoscape graph initialized successfully");
       
@@ -162,7 +164,7 @@ export function useCytoscapeGraph(
       if (cyRef.current) {
         console.log("Cleaning up cytoscape instance");
         cyRef.current.destroy();
-        cyRef.current = null;
+        // Not setting cyRef.current = null in cleanup as it's a read-only property
       }
     };
   }, [address, network, JSON.stringify(nodes), JSON.stringify(edges)]);

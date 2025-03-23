@@ -4,6 +4,9 @@ import { CytoscapeGraphProps, CytoscapeGraphRef } from './types/CytoscapeTypes';
 import { useCytoscapeGraph } from './hooks/useCytoscapeGraph';
 import CytoscapeGraphContent from './CytoscapeGraphContent';
 
+// Re-export the CytoscapeGraphRef type for external use
+export type { CytoscapeGraphRef } from './types/CytoscapeTypes';
+
 const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
   address,
   network,
@@ -39,9 +42,10 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
       }
     },
     rebuildGraph: () => {
+      // Fixed: Don't directly assign to the current property
+      // Instead, call the proper initialization method
       if (graphHook.cyRef.current) {
         graphHook.cyRef.current.destroy();
-        graphHook.cyRef.current = null;
       }
       graphHook.setHasError(false);
       graphHook.initializeGraph();
