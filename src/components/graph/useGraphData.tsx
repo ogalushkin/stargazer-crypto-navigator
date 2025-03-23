@@ -15,7 +15,7 @@ import {
   createGraphEdges,
   applyFiltersToNodes,
   applyFiltersToEdges
-} from './graphProcessing';
+} from './processing';
 
 export function useGraphData(
   address: string, 
