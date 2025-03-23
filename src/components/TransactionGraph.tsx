@@ -4,14 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2, NetworkIcon, ZoomIn, ZoomOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
+// Import the layout properly
 import coseBilkent from 'cytoscape-cose-bilkent';
 
-// Register the cose-bilkent layout
-if (!cytoscape.use) {
-  console.error("Cytoscape.use is not available");
-} else {
-  cytoscape.use(coseBilkent);
-}
+// Register the layout before using it
+// This needs to happen only once, outside of the component
+cytoscape.use(coseBilkent);
 
 export interface Transaction {
   hash: string;
