@@ -328,8 +328,16 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
               'line-style': 'solid',
               'width': 'data(width)',
               'z-index': 999,
-              'shadow-color': '#FFFFFF',
-              'shadow-opacity': 0.5
+              // Remove the shadow-color property that's causing the error
+              // 'shadow-color': '#FFFFFF',
+              // 'shadow-opacity': 0.5
+              // Instead, use a larger width for emphasis
+              'width': function(ele) {
+                // Get original width and add 2px for emphasis
+                const originalWidth = ele.data('width') || 1;
+                return originalWidth + 2;
+              },
+              'opacity': 1
             }
           },
           {
