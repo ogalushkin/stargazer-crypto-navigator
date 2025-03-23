@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
@@ -250,7 +249,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'text-outline-width': 1,
               'text-outline-color': '#131118',
               'text-outline-opacity': 0.8
-            }
+            } as cytoscape.Css.Node
           },
           {
             selector: 'node[isTarget]',
@@ -263,11 +262,16 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'font-weight': 'bold',
               'font-size': '12px',
               'text-background-color': '#4C1D95',
-              'z-index': 10, // Ensure target node is on top
-              'shadowBlur': 15,
-              'shadowColor': '#8B5CF6',
-              'shadowOpacity': 0.3
-            }
+              'z-index': 10 // Ensure target node is on top
+            } as cytoscape.Css.Node
+          },
+          {
+            // Add shadow effect to target node using class instead
+            selector: 'node[isTarget]',
+            style: {
+              'text-background-color': '#4C1D95',
+              'z-index': 10 // Ensure target node is on top
+            } as cytoscape.Css.Node
           },
           {
             selector: 'edge',
@@ -288,41 +292,29 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'line-style': 'solid',
               'target-endpoint': '0deg',
               'source-endpoint': '180deg',
-              'z-index': 1,
-              'shadowBlur': 10,
-              'shadowColor': '#D946EF',
-              'shadowOpacity': 0.2,
-              'shadowOffsetX': 0,
-              'shadowOffsetY': 0
-            }
+              'z-index': 1
+            } as cytoscape.Css.Edge
           },
           {
             selector: 'edge[isIncoming]',
             style: {
               'line-color': '#0EA5E9',       // Teal blue for incoming
-              'target-arrow-color': '#0EA5E9',
-              'shadowColor': '#0EA5E9'       // Matching shadow color
-            }
+              'target-arrow-color': '#0EA5E9'
+            } as cytoscape.Css.Edge
           },
           {
             selector: 'node[isIncoming]',
             style: {
               'background-color': '#000000',
-              'border-color': '#0EA5E9',      // Blue border for incoming nodes
-              'shadowColor': '#0EA5E9',
-              'shadowOpacity': 0.15,
-              'shadowBlur': 8
-            }
+              'border-color': '#0EA5E9'      // Blue border for incoming nodes
+            } as cytoscape.Css.Node
           },
           {
             selector: 'node[isOutgoing]',
             style: {
               'background-color': '#000000',
-              'border-color': '#D946EF',      // Pink border for outgoing nodes
-              'shadowColor': '#D946EF',
-              'shadowOpacity': 0.15,
-              'shadowBlur': 8
-            }
+              'border-color': '#D946EF'      // Pink border for outgoing nodes
+            } as cytoscape.Css.Node
           }
         ],
         layout: {
@@ -330,6 +322,16 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           fit: true
         }
       });
+
+      // Apply CSS classes to add shadow effects after creation
+      cy.style()
+        .selector('node[isTarget]')
+        .addClass('node-glow')
+        .selector('edge[isIncoming]')
+        .addClass('edge-glow-incoming')
+        .selector('edge:not([isIncoming])')
+        .addClass('edge-glow-outgoing')
+        .update();
 
       // Set up tooltips on hover - show only the transaction amount
       cy.on('mouseover', 'edge', function(event) {

@@ -87,15 +87,15 @@
   
   /* Transaction graph specific utilities */
   .node-glow {
-    filter: drop-shadow(0 0 8px rgba(155, 135, 245, 0.3));
+    filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.3));
   }
   
   .edge-glow-incoming {
-    filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.5));
+    filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.5));
   }
   
   .edge-glow-outgoing {
-    filter: drop-shadow(0 0 4px rgba(217, 70, 239, 0.5));
+    filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.5));
   }
 }
 
