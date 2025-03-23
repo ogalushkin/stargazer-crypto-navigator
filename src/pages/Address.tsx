@@ -1,13 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import AddressInput from '@/components/AddressInput';
 import AddressDetails from '@/components/AddressDetails';
 import AssetList from '@/components/AssetList';
-import TransactionGraph from '@/components/TransactionGraph';
 import { Button } from "@/components/ui/button";
-import { NetworkIcon, ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, NetworkIcon } from "lucide-react";
 import { NetworkType } from '@/utils/types';
 import { fetchAddressData } from '@/utils/api';
 import { detectNetwork, validateAddress } from '@/utils/validation';
@@ -110,7 +108,7 @@ const Address = () => {
                   />
                 </div>
                 <div>
-                  <AssetList assets={assets} />
+                  <AssetList assets={assets} isLoading={isLoading} />
                 </div>
               </div>
               

@@ -1,4 +1,3 @@
-
 import { NetworkType, AddressData, Asset, Transaction } from "@/utils/types";
 import { API_KEYS, API_ENDPOINTS } from "@/utils/config";
 
@@ -40,7 +39,6 @@ const fetchRealData = async (
       const ethData = await ethResponse.json();
       
       // Process the response and convert to AddressData format
-      // This is a placeholder and needs to be implemented properly
       if (ethData.status === '1') {
         // For now, we're still returning mock data but in the future
         // you would parse the real API response
@@ -97,6 +95,7 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: parseFloat(nativeBalance) * random(1500, 2500),
         price: random(1500, 2500),
         change24h: random(-5, 8),
+        icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png'
       },
       {
         symbol: 'USDT',
@@ -105,6 +104,7 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: random(100, 10000),
         price: random(0.98, 1.02),
         change24h: random(-1, 1),
+        icon: 'https://cryptologos.cc/logos/tether-usdt-logo.png'
       },
       {
         symbol: 'LINK',
@@ -113,6 +113,25 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: random(100, 5000),
         price: random(5, 20),
         change24h: random(-10, 15),
+        icon: 'https://cryptologos.cc/logos/chainlink-link-logo.png'
+      },
+      {
+        symbol: 'UNI',
+        name: 'Uniswap',
+        balance: random(5, 500).toFixed(2),
+        value: random(50, 2000),
+        price: random(3, 12),
+        change24h: random(-8, 12),
+        icon: 'https://cryptologos.cc/logos/uniswap-uni-logo.png'
+      },
+      {
+        symbol: 'AAVE',
+        name: 'Aave',
+        balance: random(1, 100).toFixed(2),
+        value: random(50, 1000),
+        price: random(30, 120),
+        change24h: random(-12, 18),
+        icon: 'https://cryptologos.cc/logos/aave-aave-logo.png'
       }
     );
   } else if (network === 'bitcoin') {
@@ -124,6 +143,7 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: parseFloat(nativeBalance) * random(25000, 40000),
         price: random(25000, 40000),
         change24h: random(-7, 10),
+        icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png'
       }
     );
   } else if (network === 'solana') {
@@ -135,6 +155,7 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: parseFloat(nativeBalance) * random(40, 150),
         price: random(40, 150),
         change24h: random(-12, 20),
+        icon: 'https://cryptologos.cc/logos/solana-sol-logo.png'
       },
       {
         symbol: 'USDC',
@@ -143,6 +164,16 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: random(100, 5000),
         price: random(0.99, 1.01),
         change24h: random(-0.5, 0.5),
+        icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png'
+      },
+      {
+        symbol: 'RAY',
+        name: 'Raydium',
+        balance: random(50, 2000).toFixed(2),
+        value: random(50, 1000),
+        price: random(0.5, 2),
+        change24h: random(-15, 25),
+        icon: 'https://cryptologos.cc/logos/raydium-ray-logo.png'
       }
     );
   } else if (network === 'ton') {
@@ -154,6 +185,7 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         value: parseFloat(nativeBalance) * random(2, 5),
         price: random(2, 5),
         change24h: random(-15, 25),
+        icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.png'
       },
       {
         symbol: 'JETTON',
@@ -161,10 +193,13 @@ const generateMockData = (address: string, network: NetworkType): AddressData =>
         balance: random(1000, 50000).toFixed(2),
         value: random(100, 2000),
         price: random(0.02, 0.2),
-        change24h: random(-20, 30),
+        change24h: random(-20, 30)
       }
     );
   }
+
+  // Sort assets by value in descending order
+  assets.sort((a, b) => b.value - a.value);
   
   // Generate more transactions for the Arkham-like visualization
   const transactions: Transaction[] = [];
