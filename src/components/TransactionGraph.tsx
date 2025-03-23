@@ -6,14 +6,20 @@ import { Loader2, NetworkIcon, ZoomIn, ZoomOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Register the layout extension only once
 try {
-  // Check if the layout has been registered to avoid duplicate registration
-  if (typeof coseBilkent === 'function' && !cytoscape.prototype.hasInitialised) {
+  // Check if the coseBilkent layout is not already registered
+  if (!cytoscape.prototype.hasInitializedCoseBilkent) {
     cytoscape.use(coseBilkent);
     // Mark as initialized to avoid multiple registrations
-    cytoscape.prototype.hasInitialised = true;
+    cytoscape.prototype.hasInitializedCoseBilkent = true;
     console.log("coseBilkent layout registered successfully");
   }
 } catch (e) {
@@ -32,6 +38,8 @@ interface GraphNode {
   id: string;
   label: string;
   isTarget?: boolean;
+  isIncoming?: boolean;
+  isOutgoing?: boolean;
 }
 
 interface GraphEdge {
@@ -39,6 +47,7 @@ interface GraphEdge {
   source: string;
   target: string;
   label: string;
+  value: number;
   isIncoming?: boolean;
 }
 
@@ -65,18 +74,44 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     const nodes: GraphNode[] = [{ id: address, label: shortenAddress(address), isTarget: true }];
     const edges: GraphEdge[] = [];
     const nodeSet = new Set<string>([address]);
+    
+    const incomingNodes = new Set<string>();
+    const outgoingNodes = new Set<string>();
 
+    // First pass: identify incoming and outgoing nodes
+    transactions.forEach(tx => {
+      if (tx.to === address) {
+        incomingNodes.add(tx.from);
+      } else if (tx.from === address) {
+        outgoingNodes.add(tx.to);
+      }
+    });
+
+    // Second pass: create nodes with proper type
     transactions.forEach((tx, index) => {
       // Add nodes if they don't exist
       if (!nodeSet.has(tx.from)) {
-        nodes.push({ id: tx.from, label: shortenAddress(tx.from) });
+        nodes.push({ 
+          id: tx.from, 
+          label: shortenAddress(tx.from),
+          isIncoming: tx.to === address,
+          isOutgoing: tx.from === address
+        });
         nodeSet.add(tx.from);
       }
       
       if (!nodeSet.has(tx.to)) {
-        nodes.push({ id: tx.to, label: shortenAddress(tx.to) });
+        nodes.push({ 
+          id: tx.to, 
+          label: shortenAddress(tx.to),
+          isIncoming: tx.to === address,
+          isOutgoing: tx.from === address
+        });
         nodeSet.add(tx.to);
       }
+      
+      // Convert transaction value to number
+      const numValue = parseFloat(tx.value) || 0;
       
       // Add edge
       const isIncoming = tx.to === address;
@@ -85,6 +120,7 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         source: tx.from,
         target: tx.to,
         label: tx.value,
+        value: numValue,
         isIncoming
       });
     });
@@ -116,6 +152,29 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
     }
   };
 
+  // Calculate edge width based on transaction value
+  const calculateEdgeWidth = (value: number, edges: GraphEdge[]): number => {
+    if (value <= 0) return 1;
+    
+    // Get min and max values (excluding zero values)
+    const values = edges.map(e => e.value).filter(v => v > 0);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    
+    // Use logarithmic scaling for better visualization
+    // Map to range 1px - 8px
+    if (minValue === maxValue) return 3; // Default midpoint if all values are the same
+    
+    // Logarithmic scaling - better for crypto values with high variability
+    const logMin = Math.log(Math.max(0.000001, minValue));
+    const logMax = Math.log(maxValue);
+    const logValue = Math.log(Math.max(0.000001, value));
+    
+    // Scale to 1-8px range
+    const normalizedValue = (logValue - logMin) / (logMax - logMin);
+    return 1 + normalizedValue * 7; // Scale to range 1-8px
+  };
+
   useEffect(() => {
     if (!containerRef.current || isLoading || transactions.length === 0) return;
 
@@ -132,7 +191,9 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             data: { 
               id: node.id, 
               label: node.label,
-              isTarget: node.isTarget || false
+              isTarget: node.isTarget || false,
+              isIncoming: node.isIncoming || false,
+              isOutgoing: node.isOutgoing || false
             }
           })),
           ...edges.map(edge => ({
@@ -141,6 +202,8 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               source: edge.source, 
               target: edge.target, 
               label: edge.label,
+              value: edge.value,
+              width: calculateEdgeWidth(edge.value, edges),
               isIncoming: edge.isIncoming || false
             }
           }))
@@ -180,12 +243,12 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
           {
             selector: 'edge',
             style: {
-              'width': 1.5,
+              'width': 'data(width)',
               'line-color': '#EA384C',
               'target-arrow-color': '#EA384C',
               'target-arrow-shape': 'triangle',
               'curve-style': 'bezier',
-              'label': 'data(label)',
+              'label': '',  // Don't show labels on edges, we'll use tooltips
               'font-size': '8px',
               'color': '#E2E8F0',
               'text-background-color': '#1A1A25',
@@ -200,6 +263,20 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
               'line-color': '#10B981',
               'target-arrow-color': '#10B981'
             }
+          },
+          {
+            selector: 'node[isIncoming]',
+            style: {
+              'background-color': '#065F46',
+              'border-color': '#10B981'
+            }
+          },
+          {
+            selector: 'node[isOutgoing]',
+            style: {
+              'background-color': '#7F1D1D',
+              'border-color': '#EF4444'
+            }
           }
         ],
         layout: {
@@ -208,18 +285,92 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
         }
       });
 
-      // After initialization, run the more complex layout
+      // Add tooltips to edges
+      cy.on('mouseover', 'edge', function(event) {
+        const edge = event.target;
+        const sourceNode = edge.source().data('label');
+        const targetNode = edge.target().data('label');
+        const value = edge.data('label');
+        const direction = edge.data('isIncoming') ? 'Incoming' : 'Outgoing';
+        const color = edge.data('isIncoming') ? 'green' : 'red';
+        
+        // Use native tooltip (simpler implementation)
+        edge.popperRefObj = edge.popper({
+          content: () => {
+            const content = document.createElement('div');
+            content.innerHTML = `
+              <div style="background-color: #1A1A25; color: white; padding: 8px 12px; border-radius: 4px; 
+                          border: 1px solid #454560; font-size: 12px; max-width: 200px;
+                          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)">
+                <div style="margin-bottom: 4px; display: flex; align-items: center;">
+                  <span style="display: inline-block; width: 8px; height: 8px; 
+                               background-color: ${color}; border-radius: 50%; margin-right: 6px;"></span>
+                  <span style="font-weight: 600;">${direction} Transaction</span>
+                </div>
+                <div style="margin-bottom: 4px;">
+                  <span style="color: #A1A1AA;">Amount:</span> 
+                  <span style="font-weight: 500;">${value}</span>
+                </div>
+                <div style="font-size: 11px; color: #A1A1AA;">
+                  ${sourceNode} → ${targetNode}
+                </div>
+              </div>
+            `;
+            document.body.appendChild(content);
+            return content;
+          },
+          popper: {
+            placement: 'top',
+            modifiers: [
+              {
+                name: 'offset',
+                options: {
+                  offset: [0, 8],
+                },
+              },
+            ],
+          }
+        });
+        
+        edge.popperRefObj.update();
+      });
+      
+      cy.on('mouseout', 'edge', function(event) {
+        const edge = event.target;
+        if (edge.popperRefObj) {
+          edge.popperRefObj.destroy();
+          edge.popperRefObj = null;
+        }
+      });
+
+      // After initialization, run a more complex layout that separates incoming and outgoing nodes
       try {
         const layout = cy.layout({
           name: 'coseBilkent',
           fit: true,
           padding: 50,
+          // Use positions to manipulate the layout:
+          // Target in the center, incoming nodes on the left, outgoing on the right
+          positions: function(node) {
+            // Using any here to allow additional properties
+            const nodeData = node.data() as any;
+            if (nodeData.isTarget) {
+              // Center
+              return { x: 0, y: 0 };
+            } else if (node.data('isIncoming')) {
+              // Left side (incoming)
+              return { x: -200, y: Math.random() * 200 - 100 };
+            } else {
+              // Right side (outgoing)
+              return { x: 200, y: Math.random() * 200 - 100 };
+            }
+          },
           // TypeScript doesn't know about additional coseBilkent-specific options
           // so we need to use type assertion
           nodeDimensionsIncludeLabels: true,
           randomize: false,
           nodeRepulsion: 8000,
-          idealEdgeLength: 100,
+          idealEdgeLength: 150,
           edgeElasticity: 0.45,
           nestingFactor: 0.1,
           gravity: 0.25,
