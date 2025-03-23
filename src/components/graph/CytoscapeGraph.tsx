@@ -1,31 +1,17 @@
+
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cytoscape from 'cytoscape';
-import coseBilkent from 'cytoscape-cose-bilkent';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { GraphNode, GraphEdge } from '@/utils/graphTypes';
 import { NetworkType } from '@/utils/types';
-import { 
-  INCOMING_COLOR, 
-  OUTGOING_COLOR, 
-  SELF_TRANSFER_COLOR, 
-  shortenAddress,
-  CATEGORY_COLORS
-} from '@/utils/graphUtils';
+import { shortenAddress } from '@/utils/graphUtils';
 import GraphLegend from './GraphLegend';
 import { toast } from 'sonner';
-
-// Register the layout extension only once
-if (!cytoscape.prototype.hasOwnProperty('hasInitializedCoseBilkent')) {
-  try {
-    cytoscape.use(coseBilkent);
-    // Mark as initialized to avoid multiple registrations
-    cytoscape.prototype.hasInitializedCoseBilkent = true;
-    console.log("coseBilkent layout registered successfully");
-  } catch (e) {
-    console.error("Failed to register coseBilkent layout:", e);
-  }
-}
+import { getCytoscapeStyles } from './CytoscapeStyles';
+import { getLayoutConfig, getPresetLayoutConfig } from './CytoscapeLayoutConfig';
+import { createGraphElements } from './CytoscapeInitializer';
+import CytoscapeErrorBoundary from './CytoscapeErrorBoundary';
 
 interface CytoscapeGraphProps {
   address: string;
@@ -153,207 +139,16 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
         cyRef.current = null;
       }
 
-      // Create graph elements with safer defaults
-      const elements = [];
-      
-      // Add nodes with safe defaults
-      for (const node of nodes) {
-        const position = node.isTarget ? 
-          { x: 0, y: 0 } : 
-          node.isIncoming ? 
-            { x: -250 + (Math.random() * 50), y: -100 + (Math.random() * 200) } :
-            { x: 250 - (Math.random() * 50), y: -100 + (Math.random() * 200) };
-            
-        elements.push({
-          data: { 
-            id: node.id, 
-            label: node.label || shortenAddress(node.id),
-            isTarget: node.isTarget || false,
-            isIncoming: node.isIncoming || false,
-            isOutgoing: node.isOutgoing || false,
-            category: node.category || 'uncategorized'
-          },
-          position: position,
-          group: 'nodes'
-        });
-      }
-      
-      // Add edges with safe defaults
-      for (const edge of edges) {
-        elements.push({
-          data: { 
-            id: edge.id, 
-            source: edge.source, 
-            target: edge.target, 
-            label: edge.label || '',
-            value: edge.value || 0,
-            width: edge.value ? (Math.log10(edge.value + 1) * 2.5) : 1,
-            isIncoming: edge.isIncoming || false,
-            isSelfTransfer: edge.isSelfTransfer || false,
-            hash: edge.hash,
-            timestamp: edge.timestamp
-          },
-          group: 'edges'
-        });
-      }
-
+      // Create graph elements 
+      const elements = createGraphElements(nodes, edges);
       console.log("Creating cytoscape with elements:", elements.length);
 
       // Initialize cytoscape with a preset layout for initial positioning
       const cy = cytoscape({
         container: containerRef.current,
         elements: elements,
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': '#000000',
-              'border-color': '#454560',
-              'border-width': 1,
-              'width': 42,
-              'height': 42,
-              'label': 'data(label)',
-              'color': '#FFFFFF',
-              'text-background-color': '#1A1A25',
-              'text-background-opacity': 0.7,
-              'text-background-padding': '2px',
-              'text-valign': 'bottom',
-              'text-halign': 'center',
-              'font-size': '11px',
-              'text-margin-y': 6,
-              'font-family': 'system-ui, -apple-system, sans-serif',
-              'text-outline-width': 1,
-              'text-outline-color': '#131118',
-              'text-outline-opacity': 0.8
-            }
-          },
-          {
-            selector: 'node[isTarget]',
-            style: {
-              'background-color': '#000000',
-              'border-color': '#9b87f5',
-              'border-width': 2,
-              'width': 55,
-              'height': 55,
-              'font-weight': 'bold',
-              'font-size': '12px',
-              'text-background-color': '#4C1D95',
-              'z-index': 10
-            }
-          },
-          // Category styles
-          {
-            selector: 'node[category="exchange"]',
-            style: {
-              'border-color': CATEGORY_COLORS.exchange
-            }
-          },
-          {
-            selector: 'node[category="deposit"]',
-            style: {
-              'border-color': CATEGORY_COLORS.deposit
-            }
-          },
-          {
-            selector: 'node[category="individual"]',
-            style: {
-              'border-color': CATEGORY_COLORS.individual
-            }
-          },
-          {
-            selector: 'node[category="dex"]',
-            style: {
-              'border-color': CATEGORY_COLORS.dex
-            }
-          },
-          {
-            selector: 'node[category="lending"]',
-            style: {
-              'border-color': CATEGORY_COLORS.lending
-            }
-          },
-          {
-            selector: 'node[category="uncategorized"]',
-            style: {
-              'border-color': CATEGORY_COLORS.uncategorized
-            }
-          },
-          // Edge styles
-          {
-            selector: 'edge',
-            style: {
-              'width': 'data(width)',
-              'line-color': OUTGOING_COLOR,
-              'target-arrow-color': OUTGOING_COLOR,
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier',
-              'target-endpoint': 'outside-to-node',
-              'source-endpoint': 'outside-to-node',
-              'edge-distances': 'node-position',
-              'control-point-step-size': 40,
-              'control-point-weight': 0.5,
-              'label': '',
-              'font-size': '8px',
-              'color': '#E2E8F0',
-              'text-background-color': '#1A1A25',
-              'text-background-opacity': 0.7,
-              'text-background-padding': '2px',
-              'text-rotation': 'autorotate',
-              'arrow-scale': 1.3,
-              'line-style': 'solid',
-              'z-index': 1
-            }
-          },
-          {
-            selector: 'edge[isIncoming]',
-            style: {
-              'line-color': INCOMING_COLOR,
-              'target-arrow-color': INCOMING_COLOR
-            }
-          },
-          {
-            selector: 'edge[isSelfTransfer]',
-            style: {
-              'line-color': SELF_TRANSFER_COLOR,
-              'target-arrow-color': SELF_TRANSFER_COLOR,
-              'line-style': 'dashed'
-            }
-          },
-          {
-            selector: 'edge.highlighted',
-            style: {
-              'line-color': '#FFFFFF',
-              'target-arrow-color': '#FFFFFF',
-              'line-style': 'solid',
-              'z-index': 999,
-              // Use a larger width for emphasis
-              'width': function(ele) {
-                // Get original width and add 2px for emphasis
-                const originalWidth = ele.data('width') || 1;
-                return originalWidth + 2;
-              },
-              'opacity': 1
-            }
-          },
-          {
-            selector: 'node[isIncoming]',
-            style: {
-              'background-color': '#000000',
-              'border-color': INCOMING_COLOR
-            }
-          },
-          {
-            selector: 'node[isOutgoing]',
-            style: {
-              'background-color': '#000000',
-              'border-color': OUTGOING_COLOR
-            }
-          }
-        ],
-        layout: {
-          name: 'preset',
-          fit: true
-        }
+        style: getCytoscapeStyles(),
+        layout: getPresetLayoutConfig()
       });
 
       console.log("Cytoscape instance created successfully");
@@ -383,34 +178,7 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
       });
 
       // Apply layout after initialization
-      const layout = cy.layout({
-        name: 'cose-bilkent',
-        fit: true,
-        padding: 50,
-        nodeDimensionsIncludeLabels: true,
-        nodeRepulsion: 8000,
-        idealEdgeLength: 150,
-        edgeElasticity: 0.45,
-        nestingFactor: 0.1,
-        gravity: 0.25,
-        randomize: false,
-        animate: true,
-        animationDuration: 700,
-        animationEasing: 'ease-in-out-cubic',
-        // Place nodes smartly
-        position: function(node) {
-          const data = node.data();
-          if (data.isTarget) {
-            return { x: 0, y: 0 };
-          }
-          if (data.isIncoming) {
-            return { x: -200 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
-          }
-          return { x: 200 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
-        },
-        fixedNodeConstraint: [{ nodeId: address, position: { x: 0, y: 0 } }]
-      } as any);
-      
+      const layout = cy.layout(getLayoutConfig(address) as any);
       layout.run();
       
       // Fit to container after layout completes
@@ -468,34 +236,23 @@ const CytoscapeGraph = forwardRef<CytoscapeGraphRef, CytoscapeGraphProps>(({
     };
   }, [address, network, JSON.stringify(nodes), JSON.stringify(edges)]);
 
-  if (hasError) {
-    return (
-      <div className="relative w-full h-full flex flex-col items-center justify-center bg-stargazer-card/30">
-        <AlertTriangle className="w-10 h-10 text-yellow-500 mb-3" />
-        <p className="text-white/70 mb-4">Failed to render the graph</p>
-        <button 
-          className="px-4 py-2 bg-stargazer-muted/50 hover:bg-stargazer-muted text-white rounded-md"
-          onClick={() => {
-            setHasError(false);
-            initializeGraph();
-          }}
-        >
-          Try Again
-        </button>
-        <GraphLegend showCategories={true} />
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full h-full" ref={containerRef}>
+      <CytoscapeErrorBoundary 
+        hasError={hasError}
+        retry={() => {
+          setHasError(false);
+          initializeGraph();
+        }}
+      />
+      
       {isRendering && (
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-stargazer-card/80">
           <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
         </div>
       )}
       
-      {!isRendering && nodes.length > 0 && edges.length > 0 && (
+      {!isRendering && nodes.length > 0 && edges.length > 0 && !hasError && (
         <GraphLegend showCategories={true} />
       )}
     </div>
