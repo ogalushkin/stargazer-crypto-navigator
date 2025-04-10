@@ -87,3 +87,4 @@ if (document.querySelector('title')) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
