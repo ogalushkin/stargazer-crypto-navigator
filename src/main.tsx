@@ -21,20 +21,20 @@ const updateFavicon = () => {
   const pngLink = document.createElement('link');
   pngLink.rel = 'icon';
   pngLink.type = 'image/png';
-  pngLink.href = `/lovable-uploads/406d8b6e-8db7-427a-98c9-a8d0eb3fdd3a.png?${timestamp}`;
+  pngLink.href = `favicon.png?${timestamp}`;
   document.head.appendChild(pngLink);
   
   // Create shortcut icon with versioning
   const shortcutLink = document.createElement('link');
   shortcutLink.rel = 'shortcut icon';
   shortcutLink.type = 'image/png';
-  shortcutLink.href = `/lovable-uploads/406d8b6e-8db7-427a-98c9-a8d0eb3fdd3a.png?${timestamp}`;
+  shortcutLink.href = `favicon.png?${timestamp}`;
   document.head.appendChild(shortcutLink);
   
   // Create Apple touch icon with versioning
   const appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
-  appleLink.href = `/lovable-uploads/406d8b6e-8db7-427a-98c9-a8d0eb3fdd3a.png?${timestamp}`;
+  appleLink.href = `favicon.png?${timestamp}`;
   document.head.appendChild(appleLink);
   
   console.log('Favicon updated with unique version at:', new Date().toISOString());
