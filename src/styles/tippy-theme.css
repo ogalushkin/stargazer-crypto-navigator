@@ -1,0 +1,20 @@
+
+/* Custom theme for Tippy.js tooltips */
+.tippy-box[data-theme~='stargazer'] {
+  background-color: rgba(26, 26, 37, 0.95);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(107, 70, 193, 0.5);
+  border-radius: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  max-width: 250px !important;
+}
+
+.tippy-box[data-theme~='stargazer'] .tippy-content {
+  padding: 8px 10px;
+}
+
+.tippy-box[data-theme~='stargazer'] .tippy-arrow {
+  color: rgba(26, 26, 37, 0.95);
+}

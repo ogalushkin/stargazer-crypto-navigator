@@ -6,9 +6,11 @@ import { GraphNode, GraphEdge } from '@/utils/graphTypes';
 import { shortenAddress } from '@/utils/graphUtils';
 import { toast } from 'sonner';
 import { getCytoscapeStyles } from '../CytoscapeStyles';
-import { getLayoutConfig, getPresetLayoutConfig } from '../CytoscapeLayoutConfig';
+import { getLayoutConfig, getPresetLayoutConfig, getPostInteractionLayoutConfig } from '../CytoscapeLayoutConfig';
 import { createGraphElements } from '../CytoscapeInitializer';
 import { UseCytoscapeGraphReturn } from '../types/CytoscapeTypes';
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 
 export function useCytoscapeGraph(
   address: string,
@@ -23,10 +25,11 @@ export function useCytoscapeGraph(
   const navigate = useNavigate();
   const [isRendering, setIsRendering] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const tooltipRef = useRef<any>(null);
 
   const handleNodeClick = (nodeId: string) => {
     if (nodeId !== address) {
-      navigate(`/address/${network}/${nodeId}`);
+      navigate(`/graph/${network}/${nodeId}`);
     }
   };
 
@@ -50,6 +53,14 @@ export function useCytoscapeGraph(
     onSelectTransaction(hash);
   };
 
+  const rebalanceLayout = () => {
+    if (!cyRef.current) return;
+    
+    // Apply a gentle layout to rebalance the graph after interactions
+    const layout = cyRef.current.layout(getPostInteractionLayoutConfig(address) as any);
+    layout.run();
+  };
+
   const initializeGraph = () => {
     if (!containerRef.current || !nodes.length) {
       console.log("Skipping graph initialization:", { 
@@ -67,8 +78,6 @@ export function useCytoscapeGraph(
       // Clean up previous instance if it exists
       if (cyRef.current) {
         cyRef.current.destroy();
-        // No need to explicitly set cyRef.current = null
-        // as this will be overwritten below when we create a new instance
       }
 
       // Create graph elements 
@@ -79,8 +88,14 @@ export function useCytoscapeGraph(
       const cy = cytoscape({
         container: containerRef.current,
         elements: elements,
-        style: getCytoscapeStyles() as any, // Use 'any' temporarily to fix the type issue
-        layout: getPresetLayoutConfig()
+        style: getCytoscapeStyles() as any,
+        layout: getPresetLayoutConfig(),
+        wheelSensitivity: 0.3,
+        minZoom: 0.2,
+        maxZoom: 3.0,
+        panningEnabled: true,
+        boxSelectionEnabled: false,
+        autoungrabify: false
       });
 
       console.log("Cytoscape instance created successfully");
@@ -94,6 +109,57 @@ export function useCytoscapeGraph(
       cy.on('tap', 'edge', function(evt) {
         const hash = evt.target.data('hash');
         highlightTransaction(hash);
+      });
+      
+      // Enhanced drag behavior for better node movement
+      cy.on('dragfree', function(evt) {
+        setTimeout(rebalanceLayout, 300);
+      });
+
+      // Tooltips for edges - show transaction information on hover
+      cy.on('mouseover', 'edge', function(evt) {
+        const edge = evt.target;
+        edge.addClass('hover');
+        
+        const amount = edge.data('label');
+        const from = shortenAddress(edge.data('source'));
+        const to = shortenAddress(edge.data('target'));
+        const timestamp = new Date(edge.data('timestamp') * 1000).toLocaleString();
+        
+        const content = `
+          <div style="text-align: left; font-size: 12px; padding: 5px;">
+            <div><strong>Amount:</strong> ${amount}</div>
+            <div><strong>From:</strong> ${from}</div>
+            <div><strong>To:</strong> ${to}</div>
+            <div><strong>Time:</strong> ${timestamp}</div>
+          </div>
+        `;
+        
+        if (tooltipRef.current) {
+          tooltipRef.current.destroy();
+        }
+        
+        // Create a tooltip instance
+        tooltipRef.current = tippy(evt.target.popperRef(), {
+          content: content,
+          placement: 'right',
+          arrow: true,
+          theme: 'stargazer',
+          appendTo: document.body,
+          trigger: 'manual',
+          interactive: true,
+          allowHTML: true
+        });
+        
+        tooltipRef.current.show();
+      });
+      
+      cy.on('mouseout', 'edge', function(evt) {
+        evt.target.removeClass('hover');
+        if (tooltipRef.current) {
+          tooltipRef.current.destroy();
+          tooltipRef.current = null;
+        }
       });
       
       // Cursor styles
@@ -164,7 +230,11 @@ export function useCytoscapeGraph(
       if (cyRef.current) {
         console.log("Cleaning up cytoscape instance");
         cyRef.current.destroy();
-        // Not setting cyRef.current = null in cleanup as it's a read-only property
+      }
+      
+      if (tooltipRef.current) {
+        tooltipRef.current.destroy();
+        tooltipRef.current = null;
       }
     };
   }, [address, network, JSON.stringify(nodes), JSON.stringify(edges)]);
@@ -177,6 +247,7 @@ export function useCytoscapeGraph(
     initializeGraph,
     highlightTransaction,
     handleNodeClick,
-    setHasError
+    setHasError,
+    rebalanceLayout
   };
 }

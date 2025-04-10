@@ -9,6 +9,8 @@ import TransactionTable from './TransactionTable';
 import CytoscapeGraph, { CytoscapeGraphRef } from './graph/CytoscapeGraph';
 import { useGraphData } from './graph/useGraphData';
 import { MAX_TRANSACTIONS } from '@/utils/graphUtils';
+import { Button } from './ui/button';
+import { ExternalLink } from 'lucide-react';
 
 // Export types from the original file to maintain backward compatibility
 export type { 
@@ -75,6 +77,10 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
   const handleTryAnotherClick = () => {
     navigate('/');
   };
+  
+  const handleFullViewClick = () => {
+    navigate(`/graph/${network}/${address}`);
+  };
 
   // Empty transactions check
   const isEmpty = !transactions || transactions.length === 0;
@@ -114,6 +120,16 @@ const TransactionGraph: React.FC<TransactionGraphProps> = ({
             selectedTransaction={selectedTransaction}
             onSelectTransaction={handleTransactionSelect}
           />
+          
+          {!fullPage && !isEmpty && !isLoading && (
+            <Button 
+              className="absolute bottom-4 right-4 bg-violet-600 hover:bg-violet-700 flex items-center gap-2"
+              onClick={handleFullViewClick}
+            >
+              <ExternalLink size={16} />
+              Full View
+            </Button>
+          )}
         </div>
         
         {fullPage && (

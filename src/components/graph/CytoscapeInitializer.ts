@@ -20,7 +20,7 @@ if (!cytoscape.prototype.hasOwnProperty('hasInitializedCoseBilkent')) {
 export const createGraphElements = (nodes: GraphNode[], edges: GraphEdge[]) => {
   const elements = [];
   
-  // Add nodes with safe defaults
+  // Add nodes with improved positioning
   for (const node of nodes) {
     const position = node.isTarget ? 
       { x: 0, y: 0 } : 
@@ -42,7 +42,7 @@ export const createGraphElements = (nodes: GraphNode[], edges: GraphEdge[]) => {
     });
   }
   
-  // Add edges with safe defaults
+  // Add edges with improved weight calculation
   for (const edge of edges) {
     elements.push({
       data: { 

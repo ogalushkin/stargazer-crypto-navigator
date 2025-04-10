@@ -1,3 +1,4 @@
+
 import { CATEGORY_COLORS, INCOMING_COLOR, OUTGOING_COLOR, SELF_TRANSFER_COLOR } from '@/utils/graphUtils';
 
 // Define the cytoscape styles in a separate file to keep the main component cleaner
@@ -79,7 +80,7 @@ export const getCytoscapeStyles = () => {
         'border-color': CATEGORY_COLORS.uncategorized
       }
     },
-    // Edge styles
+    // Edge styles - Updated with new visual styling
     {
       selector: 'edge',
       style: {
@@ -88,8 +89,8 @@ export const getCytoscapeStyles = () => {
         'target-arrow-color': OUTGOING_COLOR,
         'target-arrow-shape': 'triangle',
         'curve-style': 'bezier',
-        'target-endpoint': 'outside-to-node',
-        'source-endpoint': 'outside-to-node',
+        'target-endpoint': 'outside-to-node-or-label',
+        'source-endpoint': 'outside-to-node-or-label',
         'edge-distances': 'node-position',
         'control-point-step-size': 40,
         'control-point-weight': 0.5,
@@ -137,6 +138,14 @@ export const getCytoscapeStyles = () => {
       }
     },
     {
+      selector: 'edge:selected',
+      style: {
+        'line-color': '#FFD700',
+        'target-arrow-color': '#FFD700',
+        'z-index': 999
+      }
+    },
+    {
       selector: 'node[isIncoming]',
       style: {
         'background-color': '#000000',
@@ -148,6 +157,18 @@ export const getCytoscapeStyles = () => {
       style: {
         'background-color': '#000000',
         'border-color': OUTGOING_COLOR
+      }
+    },
+    // Hover styles for tooltip information
+    {
+      selector: 'edge.hover',
+      style: {
+        'width': function(ele) {
+          const originalWidth = ele.data('width') || 1;
+          return originalWidth + 1;
+        },
+        'opacity': 1,
+        'z-index': 998
       }
     }
   ] as any; // Return as any to resolve type issues with Cytoscape styles

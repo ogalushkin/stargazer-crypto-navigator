@@ -30,4 +30,5 @@ export interface UseCytoscapeGraphReturn {
   highlightTransaction: (hash: string | null) => void;
   handleNodeClick: (nodeId: string) => void;
   setHasError: (hasError: boolean) => void;
+  rebalanceLayout: () => void;
 }

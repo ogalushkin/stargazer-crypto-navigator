@@ -15,3 +15,10 @@ export const calculateEdgeWidth = (value: number): number => {
   // Clamp between min 1px and max 10px
   return Math.min(Math.max(width, 1), 10);
 };
+
+// Calculate position offsets for multiple edges between the same nodes
+export const calculateEdgeOffset = (index: number, total: number): number => {
+  if (total <= 1) return 0;
+  const offset = ((index / (total - 1)) - 0.5) * 20;
+  return offset;
+};

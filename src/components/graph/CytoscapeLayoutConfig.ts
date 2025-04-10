@@ -15,18 +15,32 @@ export const getLayoutConfig = (targetNodeId: string) => {
     animate: true,
     animationDuration: 700,
     animationEasing: 'ease-in-out-cubic',
-    // Place nodes smartly
+    // Position nodes in a directional flow based on transaction direction
     position: function(node: any) {
       const data = node.data();
       if (data.isTarget) {
         return { x: 0, y: 0 };
       }
       if (data.isIncoming) {
-        return { x: -200 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
+        return { x: -250 - (Math.random() * 100), y: -100 + (Math.random() * 200) };
       }
-      return { x: 200 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
+      return { x: 250 + (Math.random() * 100), y: -100 + (Math.random() * 200) };
     },
-    fixedNodeConstraint: [{ nodeId: targetNodeId, position: { x: 0, y: 0 } }]
+    // Fix the target node in the center
+    fixedNodeConstraint: [{ nodeId: targetNodeId, position: { x: 0, y: 0 } }],
+    // Align nodes based on transaction direction
+    alignmentConstraint: { vertical: [
+      { node: targetNodeId, position: 'center' }
+    ]},
+    // Group related nodes for smoother dragging
+    groupCompoundNodes: true,
+    // Improve edge placement
+    edgeEndpoint: function(edge: any) {
+      return {
+        source: 'outside-to-node',
+        target: 'outside-to-node'
+      };
+    }
   };
 };
 
@@ -35,5 +49,29 @@ export const getPresetLayoutConfig = () => {
   return {
     name: 'preset',
     fit: true
+  };
+};
+
+// Function to adjust layout after user interactions
+export const getPostInteractionLayoutConfig = (targetNodeId: string) => {
+  return {
+    name: 'cose-bilkent',
+    fit: false,
+    padding: 50,
+    nodeDimensionsIncludeLabels: true,
+    nodeRepulsion: 6000,
+    idealEdgeLength: 120,
+    edgeElasticity: 0.5,
+    nestingFactor: 0.1,
+    gravity: 0.3,
+    randomize: false,
+    animate: true,
+    animationDuration: 500,
+    animationEasing: 'ease-out-cubic',
+    fixedNodeConstraint: [{ nodeId: targetNodeId, position: { x: 0, y: 0 } }],
+    alignmentConstraint: { vertical: [
+      { node: targetNodeId, position: 'center' }
+    ]},
+    groupCompoundNodes: true
   };
 };
