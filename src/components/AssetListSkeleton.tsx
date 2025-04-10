@@ -12,6 +12,7 @@ const AssetListSkeleton: React.FC = () => {
           <TableRow className="border-stargazer-muted/20">
             <TableHead className="w-[200px]">Asset</TableHead>
             <TableHead className="text-right">Holdings</TableHead>
+            <TableHead className="text-right">24h Change</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -31,6 +32,9 @@ const AssetListSkeleton: React.FC = () => {
                   <Skeleton className="h-4 w-20 bg-stargazer-muted/30 ml-auto" />
                   <Skeleton className="h-3 w-14 bg-stargazer-muted/20 ml-auto" />
                 </div>
+              </TableCell>
+              <TableCell className="text-right py-4">
+                <Skeleton className="h-4 w-16 bg-stargazer-muted/30 ml-auto" />
               </TableCell>
             </TableRow>
           ))}

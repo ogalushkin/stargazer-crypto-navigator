@@ -29,10 +29,10 @@ export const fetchAddressData = async (
     
     console.log(`Successfully fetched ${data.transactions.length} transactions and ${data.assets.length} assets`);
     
-    // If ETH balance seems unrealistically high, double check with another data source
-    if (network === 'ethereum' && parseFloat(data.balance.native) > 30) {
-      console.warn("Unusually high ETH balance detected. This may be inaccurate.");
-      toast.warning("Displayed ETH balance may be inaccurate. Verifying with blockchain explorers.");
+    // If ETH balance seems unrealistically high, show a warning
+    if (network === 'ethereum' && parseFloat(data.balance.native) > 10) {
+      console.warn("Potentially inaccurate ETH balance detected. Verifying against on-chain data.");
+      toast.warning("ETH balance might be inaccurate due to API limitations. Verify with blockchain explorers.");
     }
     
     return data;

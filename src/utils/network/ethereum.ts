@@ -2,6 +2,7 @@
 import { AddressData, Asset, Transaction } from "@/utils/types";
 import { API_ENDPOINTS, API_KEYS } from "@/utils/config";
 import { generateMockData } from "../mockData";
+import { ethereumTokenAddressToSymbol, getTokenInfoByAddress } from "../logoUtils";
 
 export const fetchEthereumData = async (address: string): Promise<AddressData> => {
   try {
@@ -21,12 +22,12 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
     const tokenTxData = await tokenTxResponse.json();
     console.log("Token transaction count:", tokenTxData?.result?.length || 0);
 
-    // Get token balances directly 
-    const tokenBalanceResponse = await fetch(
+    // Try to get token balances using more reliable method - ERC-20 token balances
+    const tokenBalancesResponse = await fetch(
       `${API_ENDPOINTS.etherscan}?module=account&action=tokenbalance&address=${address}&tag=latest&apikey=${API_KEYS.etherscan}`
     );
-    const tokenBalanceData = await tokenBalanceResponse.json();
-    console.log("Token balance response:", tokenBalanceData);
+    const tokenBalancesData = await tokenBalancesResponse.json();
+    console.log("Token balances response:", tokenBalancesData);
 
     // Get normal transactions
     const txResponse = await fetch(
@@ -38,7 +39,7 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
     // Process the responses
     if (balanceData.status === '1') {
       // Convert wei to ETH (1 ETH = 10^18 wei)
-      const ethBalance = (parseInt(balanceData.result) / 1e18).toFixed(6);
+      const ethBalance = (parseInt(balanceData.result) / 1e18).toFixed(8);
       
       // Get current ETH price from CoinGecko
       const ethPriceResponse = await fetch(
@@ -64,7 +65,7 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
         }
       ];
 
-      // Process ERC-20 token transactions to extract unique tokens
+      // Track unique token contract addresses from transactions
       const processedTokens = new Map<string, { 
         symbol: string, 
         name: string, 
@@ -73,25 +74,32 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
         lastBalance: string
       }>();
       
-      if (tokenTxData.status === '1' && tokenTxData.result.length > 0) {
+      if (tokenTxData.status === '1' && tokenTxData.result && tokenTxData.result.length > 0) {
         // Extract unique tokens from transactions
         for (const tx of tokenTxData.result) {
-          const symbol = tx.tokenSymbol;
-          if (!processedTokens.has(symbol) && tx.tokenSymbol !== 'ETH') {
-            processedTokens.set(symbol, {
+          const contractAddress = tx.contractAddress.toLowerCase();
+          
+          // If we haven't processed this token yet
+          if (!processedTokens.has(contractAddress)) {
+            // Try to get known token info from our mapping
+            const tokenInfo = getTokenInfoByAddress(contractAddress);
+            const symbol = tx.tokenSymbol || tokenInfo.symbol;
+            const name = tx.tokenName || tokenInfo.name;
+            
+            processedTokens.set(contractAddress, {
               symbol,
-              name: tx.tokenName,
+              name,
               decimals: parseInt(tx.tokenDecimal) || 18,
-              contractAddress: tx.contractAddress,
+              contractAddress,
               lastBalance: '0'
             });
           }
         }
         
-        // Now calculate token balances by querying each token contract
-        for (const [symbol, tokenInfo] of processedTokens.entries()) {
+        // Fetch the balance for each token contract
+        for (const [contractAddress, tokenInfo] of processedTokens.entries()) {
           try {
-            // Query token balance using Etherscan API
+            // Query token balance using Etherscan API for ERC-20 tokens
             const tokenBalanceResponse = await fetch(
               `${API_ENDPOINTS.etherscan}?module=account&action=tokenbalance&contractaddress=${tokenInfo.contractAddress}&address=${address}&tag=latest&apikey=${API_KEYS.etherscan}`
             );
@@ -100,75 +108,75 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
             if (tokenBalanceData.status === '1') {
               // Convert raw balance to decimal based on token decimals
               const rawBalance = tokenBalanceData.result;
-              const formattedBalance = (parseInt(rawBalance) / Math.pow(10, tokenInfo.decimals)).toFixed(4);
+              const formattedBalance = (parseInt(rawBalance) / Math.pow(10, tokenInfo.decimals)).toFixed(8);
               tokenInfo.lastBalance = formattedBalance;
-              console.log(`${symbol} balance:`, formattedBalance);
+              console.log(`${tokenInfo.symbol} balance:`, formattedBalance);
             }
           } catch (err) {
-            console.error(`Error fetching balance for token ${symbol}:`, err);
+            console.error(`Error fetching balance for token ${tokenInfo.symbol}:`, err);
           }
         }
       }
       
       // Get price data for tokens from CoinGecko
-      const tokenSymbols = Array.from(processedTokens.keys()).map(s => s.toLowerCase());
+      // Create a mapping of symbols to CoinGecko IDs for more reliable price lookups
+      const symbolToCoinGeckoId: Record<string, string> = {
+        'link': 'chainlink',
+        'usdt': 'tether',
+        'usdc': 'usd-coin',
+        'dai': 'dai',
+        'aave': 'aave',
+        'uni': 'uniswap',
+        'weth': 'weth',
+        'wbtc': 'wrapped-bitcoin',
+        'shib': 'shiba-inu',
+        'ape': 'apecoin',
+        'matic': 'matic-network',
+        'cro': 'crypto-com-chain',
+        'atom': 'cosmos',
+        'avax': 'avalanche-2',
+        'ftm': 'fantom',
+        'near': 'near',
+        'doge': 'dogecoin'
+      };
+      
+      const tokenSymbols = Array.from(processedTokens.values()).map(t => t.symbol.toLowerCase());
+      const coinIds = tokenSymbols
+        .map(symbol => symbolToCoinGeckoId[symbol] || symbol)
+        .filter(id => id !== 'unknown')
+        .join(',');
+      
       let tokenPrices: Record<string, any> = {};
       
-      if (tokenSymbols.length > 0) {
+      // Only fetch prices if we have tokens
+      if (coinIds) {
         try {
-          // Convert token symbols to CoinGecko IDs
-          // This is a simplified mapping - in production you'd use a more comprehensive mapping
-          const coinIds = {
-            'link': 'chainlink',
-            'usdt': 'tether',
-            'usdc': 'usd-coin',
-            'dai': 'dai',
-            'aave': 'aave',
-            'uni': 'uniswap',
-            'weth': 'weth',
-            // Add more mappings as needed
-          };
-          
-          // Build a list of coin IDs to query
-          const coinIdList = tokenSymbols
-            .map(symbol => coinIds[symbol.toLowerCase()] || symbol.toLowerCase())
-            .join(',');
-            
-          if (coinIdList) {
-            const priceResponse = await fetch(
-              `${API_ENDPOINTS.coingecko}/simple/price?ids=${coinIdList}&vs_currencies=usd&include_24hr_change=true`
-            );
-            tokenPrices = await priceResponse.json();
-            console.log("Token price data:", tokenPrices);
-          }
+          const priceResponse = await fetch(
+            `${API_ENDPOINTS.coingecko}/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`
+          );
+          tokenPrices = await priceResponse.json();
+          console.log("Token price data:", tokenPrices);
         } catch (error) {
           console.error("Error fetching token prices:", error);
         }
       }
       
-      // Add tokens to assets array with accurate balances
-      for (const [symbol, tokenInfo] of processedTokens.entries()) {
+      // Process token assets with their balances
+      for (const tokenInfo of processedTokens.values()) {
         const balance = tokenInfo.lastBalance;
         
         // Skip tokens with zero balance
         if (parseFloat(balance) === 0) continue;
         
-        // Try to get price data - for simplicity using a direct mapping
-        // In production you'd have a more robust token ID mapping
-        const coinGeckoId = symbol.toLowerCase() === 'link' ? 'chainlink' : 
-                            symbol.toLowerCase() === 'usdt' ? 'tether' :
-                            symbol.toLowerCase() === 'usdc' ? 'usd-coin' :
-                            symbol.toLowerCase() === 'dai' ? 'dai' :
-                            symbol.toLowerCase() === 'aave' ? 'aave' :
-                            symbol.toLowerCase() === 'uni' ? 'uniswap' :
-                            symbol.toLowerCase();
-                            
+        const symbol = tokenInfo.symbol;
+        const lowerSymbol = symbol.toLowerCase();
+        const coinGeckoId = symbolToCoinGeckoId[lowerSymbol] || lowerSymbol;
+        
         const priceData = tokenPrices[coinGeckoId];
         const price = priceData?.usd || 0;
         const change24h = priceData?.usd_24h_change || 0;
         const value = parseFloat(balance) * price;
         
-        // Add the token to our assets list if it has any balance
         if (parseFloat(balance) > 0) {
           assets.push({
             symbol,
@@ -189,14 +197,14 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
       const transactions: Transaction[] = [];
       
       // Process both normal and token transactions
-      if (txData.status === '1' && txData.result.length > 0) {
+      if (txData.status === '1' && txData.result && txData.result.length > 0) {
         // Process normal ETH transactions
-        const maxTx = Math.min(txData.result.length, 200); // Increase limit to get more data
+        const maxTx = Math.min(txData.result.length, 200);
         console.log(`Processing ${maxTx} out of ${txData.result.length} normal transactions`);
         
         for (let i = 0; i < maxTx; i++) {
           const tx = txData.result[i];
-          const valueInEth = (parseInt(tx.value) / 1e18).toFixed(6);
+          const valueInEth = (parseInt(tx.value) / 1e18).toFixed(8);
           
           if (parseInt(tx.value) > 0) { // Only add transactions with actual value
             transactions.push({
@@ -211,14 +219,14 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
       }
       
       // Add token transactions too
-      if (tokenTxData.status === '1' && tokenTxData.result.length > 0) {
+      if (tokenTxData.status === '1' && tokenTxData.result && tokenTxData.result.length > 0) {
         const maxTokenTx = Math.min(tokenTxData.result.length, 200);
         console.log(`Processing ${maxTokenTx} out of ${tokenTxData.result.length} token transactions`);
         
         for (let i = 0; i < maxTokenTx; i++) {
           const tx = tokenTxData.result[i];
           const decimals = parseInt(tx.tokenDecimal) || 18;
-          const valueInTokens = (parseInt(tx.value) / Math.pow(10, decimals)).toFixed(6);
+          const valueInTokens = (parseInt(tx.value) / Math.pow(10, decimals)).toFixed(8);
           
           transactions.push({
             hash: tx.hash,

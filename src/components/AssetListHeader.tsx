@@ -31,6 +31,23 @@ const AssetListHeader: React.FC<AssetListHeaderProps> = ({ sortKey, sortDirectio
             )}
           </div>
         </TableHead>
+        <TableHead 
+          className="text-right cursor-pointer group"
+          onClick={() => toggleSort('change24h')}
+        >
+          <div className="flex items-center justify-end gap-1">
+            24h Change
+            {sortKey === 'change24h' ? (
+              sortDirection === 'desc' ? (
+                <ChevronDown className="w-4 h-4 text-violet-400" />
+              ) : (
+                <ChevronUp className="w-4 h-4 text-violet-400" />
+              )
+            ) : (
+              <SortAsc className="w-4 h-4 opacity-0 group-hover:opacity-40" />
+            )}
+          </div>
+        </TableHead>
       </TableRow>
     </TableHeader>
   );
