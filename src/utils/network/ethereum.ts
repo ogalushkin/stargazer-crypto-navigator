@@ -5,23 +5,28 @@ import { generateMockData } from "../mockData";
 
 export const fetchEthereumData = async (address: string): Promise<AddressData> => {
   try {
+    console.log(`Fetching Ethereum data for address: ${address}`);
+    
     // Etherscan API call for ETH balance
     const balanceResponse = await fetch(
       `${API_ENDPOINTS.etherscan}?module=account&action=balance&address=${address}&tag=latest&apikey=${API_KEYS.etherscan}`
     );
     const balanceData = await balanceResponse.json();
+    console.log("Balance data response:", balanceData);
     
     // Get token transactions (ERC-20 tokens)
     const tokenTxResponse = await fetch(
       `${API_ENDPOINTS.etherscan}?module=account&action=tokentx&address=${address}&sort=desc&apikey=${API_KEYS.etherscan}`
     );
     const tokenTxData = await tokenTxResponse.json();
+    console.log("Token transaction count:", tokenTxData?.result?.length || 0);
 
     // Get normal transactions
     const txResponse = await fetch(
       `${API_ENDPOINTS.etherscan}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${API_KEYS.etherscan}`
     );
     const txData = await txResponse.json();
+    console.log("Regular transaction count:", txData?.result?.length || 0);
     
     // Process the responses
     if (balanceData.status === '1') {
@@ -89,8 +94,9 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
       const transactions: Transaction[] = [];
       
       if (txData.status === '1' && txData.result.length > 0) {
-        // Limit to 50 transactions for performance
-        const maxTx = Math.min(txData.result.length, 50);
+        // Increase transaction limit to get more data
+        const maxTx = Math.min(txData.result.length, 100);
+        console.log(`Processing ${maxTx} out of ${txData.result.length} transactions`);
         
         for (let i = 0; i < maxTx; i++) {
           const tx = txData.result[i];
@@ -104,7 +110,11 @@ export const fetchEthereumData = async (address: string): Promise<AddressData> =
             timestamp: parseInt(tx.timeStamp) * 1000, // Convert to milliseconds
           });
         }
+      } else {
+        console.warn("No transaction data found or API error:", txData);
       }
+      
+      console.log(`Processed ${transactions.length} transactions for address ${address}`);
       
       return {
         balance: {

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import TransactionGraph from '@/components/TransactionGraph';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import { NetworkType } from '@/utils/types';
 import { fetchAddressData } from '@/utils/api';
 import { detectNetwork, validateAddress } from '@/utils/validation';
@@ -15,11 +15,13 @@ const TransactionGraphPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [isAddressValid, setIsAddressValid] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const validateAndFetchData = async () => {
       setIsLoading(true);
+      setFetchError(null);
       
       try {
         // Re-detect network to ensure consistency (in case URL was edited manually)
@@ -48,6 +50,7 @@ const TransactionGraphPage = () => {
           return;
         }
         
+        console.log(`Fetching address data for ${network}:${address}`);
         // Fetch address data
         const data = await fetchAddressData(address, network as NetworkType);
         
@@ -56,12 +59,18 @@ const TransactionGraphPage = () => {
           console.log("Fetched transactions:", data.transactions.length);
           setTransactions(data.transactions);
           setIsAddressValid(true);
+          
+          if (data.transactions.length === 0) {
+            setFetchError("No transactions found for this address");
+          }
         } else {
           console.error('Invalid transaction data format:', data);
+          setFetchError("Invalid transaction data format");
           toast.error('Failed to load transaction data: invalid format');
         }
       } catch (error) {
         console.error('Error fetching transaction data:', error);
+        setFetchError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         toast.error('Failed to fetch transaction data');
       } finally {
         setIsLoading(false);
@@ -75,6 +84,10 @@ const TransactionGraphPage = () => {
 
   const handleBackClick = () => {
     navigate(`/address/${network}/${address}`);
+  };
+
+  const handleTryAnotherAddress = () => {
+    navigate('/');
   };
 
   if (!isAddressValid && !isLoading) {
@@ -120,14 +133,26 @@ const TransactionGraphPage = () => {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full">
-                  <p className="text-white/70 mb-4">No transactions found for this address</p>
-                  <Button 
-                    variant="outline" 
-                    className="bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
-                    onClick={handleBackClick}
-                  >
-                    Back to Address
-                  </Button>
+                  <Info className="w-10 h-10 text-yellow-500 mb-3" />
+                  <p className="text-white/70 mb-2">No transactions found for this address</p>
+                  {fetchError && (
+                    <p className="text-white/50 mb-4 text-sm max-w-lg text-center">{fetchError}</p>
+                  )}
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="bg-stargazer-muted/70 hover:bg-stargazer-muted border-stargazer-muted/80"
+                      onClick={handleBackClick}
+                    >
+                      Back to Address
+                    </Button>
+                    <Button 
+                      className="bg-violet-600 hover:bg-violet-700"
+                      onClick={handleTryAnotherAddress}
+                    >
+                      Try Another Address
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

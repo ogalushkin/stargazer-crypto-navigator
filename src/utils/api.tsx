@@ -5,6 +5,7 @@ import { fetchBitcoinData } from "./network/bitcoin";
 import { fetchSolanaData } from "./network/solana";
 import { fetchTonData } from "./network/ton";
 import { generateMockData } from "./mockData";
+import { toast } from 'sonner';
 
 /**
  * Fetch address data (balance, assets, transactions) from the appropriate API
@@ -17,11 +18,22 @@ export const fetchAddressData = async (
   try {
     console.log(`Fetching data for ${network} address: ${address}`);
     // Call the appropriate API based on network
-    return await fetchRealData(address, network);
+    const data = await fetchRealData(address, network);
+    
+    // Verify the data before returning
+    if (!data.transactions || data.transactions.length === 0) {
+      console.warn(`No transactions found for ${address}. Using mock data.`);
+      toast.info("No real transactions found. Showing simulated data.");
+      return generateMockData(address, network);
+    }
+    
+    console.log(`Successfully fetched ${data.transactions.length} transactions`);
+    return data;
   } catch (error) {
     console.error(`Error fetching real data for ${network}:`, error);
     // Fall back to mock data on error
     console.log(`Falling back to mock data for ${address}`);
+    toast.error("Error fetching blockchain data. Showing simulated data.");
     return generateMockData(address, network);
   }
 };
