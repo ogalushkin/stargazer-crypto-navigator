@@ -1,4 +1,3 @@
-
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
@@ -14,37 +13,30 @@ const updateFavicon = () => {
     document.head.removeChild(link);
   });
   
-  // Add timestamp to prevent caching
-  const timestamp = Date.now();
+  // Generate a more unique cache-busting timestamp
+  const timestamp = `v=${Date.now()}`;
   
-  // Create SVG favicon
+  // Create SVG favicon with explicit versioning
   const svgLink = document.createElement('link');
   svgLink.rel = 'icon';
   svgLink.type = 'image/svg+xml';
-  svgLink.href = `/src/assets/stargazer-favicon.svg?t=${timestamp}`;
+  svgLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
   document.head.appendChild(svgLink);
   
-  // Create shortcut icon
+  // Create shortcut icon with versioning
   const shortcutLink = document.createElement('link');
   shortcutLink.rel = 'shortcut icon';
   shortcutLink.type = 'image/svg+xml';
-  shortcutLink.href = `/src/assets/stargazer-favicon.svg?t=${timestamp}`;
+  shortcutLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
   document.head.appendChild(shortcutLink);
   
-  // Create Apple touch icon
+  // Create Apple touch icon with versioning
   const appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
-  appleLink.href = `/src/assets/stargazer-favicon.svg?t=${timestamp}`;
+  appleLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
   document.head.appendChild(appleLink);
   
-  // Create fallback ICO
-  const icoLink = document.createElement('link');
-  icoLink.rel = 'alternate icon';
-  icoLink.type = 'image/x-icon';
-  icoLink.href = `/favicon.ico?t=${timestamp}`;
-  document.head.appendChild(icoLink);
-  
-  console.log('Favicon updated at:', new Date().toISOString());
+  console.log('Favicon updated with unique version at:', new Date().toISOString());
 };
 
 // Run immediately
@@ -56,9 +48,10 @@ window.addEventListener('DOMContentLoaded', () => {
   updateFavicon();
 });
 
-// Reset title on route changes
+// Reset title and favicon on route changes
 window.addEventListener('popstate', () => {
   document.title = 'Stargazer';
+  updateFavicon();
 });
 
 // Create a MutationObserver to watch for any title changes
@@ -87,4 +80,3 @@ if (document.querySelector('title')) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
-
