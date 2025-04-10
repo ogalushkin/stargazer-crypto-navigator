@@ -1,3 +1,4 @@
+
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
@@ -16,24 +17,24 @@ const updateFavicon = () => {
   // Generate a more unique cache-busting timestamp
   const timestamp = `v=${Date.now()}`;
   
-  // Create SVG favicon with explicit versioning
-  const svgLink = document.createElement('link');
-  svgLink.rel = 'icon';
-  svgLink.type = 'image/svg+xml';
-  svgLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
-  document.head.appendChild(svgLink);
+  // Create PNG favicon with explicit versioning
+  const pngLink = document.createElement('link');
+  pngLink.rel = 'icon';
+  pngLink.type = 'image/png';
+  pngLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
+  document.head.appendChild(pngLink);
   
   // Create shortcut icon with versioning
   const shortcutLink = document.createElement('link');
   shortcutLink.rel = 'shortcut icon';
-  shortcutLink.type = 'image/svg+xml';
-  shortcutLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
+  shortcutLink.type = 'image/png';
+  shortcutLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
   document.head.appendChild(shortcutLink);
   
   // Create Apple touch icon with versioning
   const appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
-  appleLink.href = `/src/assets/stargazer-favicon.svg?${timestamp}`;
+  appleLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
   document.head.appendChild(appleLink);
   
   console.log('Favicon updated with unique version at:', new Date().toISOString());
