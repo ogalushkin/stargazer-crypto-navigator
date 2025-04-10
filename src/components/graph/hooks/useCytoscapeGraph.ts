@@ -116,7 +116,7 @@ export function useCytoscapeGraph(
         setTimeout(rebalanceLayout, 300);
       });
 
-      // Tooltips for edges - show transaction information on hover
+      // Fix for tooltips: use DOM element for tooltip container instead of popperRef
       cy.on('mouseover', 'edge', function(evt) {
         const edge = evt.target;
         edge.addClass('hover');
@@ -124,7 +124,7 @@ export function useCytoscapeGraph(
         const amount = edge.data('label');
         const from = shortenAddress(edge.data('source'));
         const to = shortenAddress(edge.data('target'));
-        const timestamp = new Date(edge.data('timestamp') * 1000).toLocaleString();
+        const timestamp = edge.data('timestamp') ? new Date(edge.data('timestamp') * 1000).toLocaleString() : 'Unknown';
         
         const content = `
           <div style="text-align: left; font-size: 12px; padding: 5px;">
@@ -139,19 +139,39 @@ export function useCytoscapeGraph(
           tooltipRef.current.destroy();
         }
         
-        // Create a tooltip instance
-        tooltipRef.current = tippy(evt.target.popperRef(), {
-          content: content,
-          placement: 'right',
-          arrow: true,
-          theme: 'stargazer',
-          appendTo: document.body,
-          trigger: 'manual',
-          interactive: true,
-          allowHTML: true
-        });
+        // Create a div element for the tooltip to attach to
+        const renderedNode = edge.renderer().hoverData.capture;
+        if (!renderedNode) return;
         
-        tooltipRef.current.show();
+        // Create a tooltip instance
+        if (containerRef.current) {
+          tooltipRef.current = tippy(containerRef.current, {
+            content: content,
+            placement: 'right',
+            arrow: true,
+            theme: 'stargazer',
+            appendTo: document.body,
+            trigger: 'manual',
+            interactive: true,
+            allowHTML: true,
+            getReferenceClientRect: () => {
+              // Use mouse position for tooltip positioning
+              const renderedPosition = edge.renderedMidpoint();
+              const containerRect = containerRef.current?.getBoundingClientRect() || new DOMRect();
+              
+              return {
+                width: 0,
+                height: 0,
+                top: containerRect.top + renderedPosition.y,
+                left: containerRect.left + renderedPosition.x,
+                right: containerRect.left + renderedPosition.x,
+                bottom: containerRect.top + renderedPosition.y
+              };
+            }
+          });
+          
+          tooltipRef.current.show();
+        }
       });
       
       cy.on('mouseout', 'edge', function(evt) {
