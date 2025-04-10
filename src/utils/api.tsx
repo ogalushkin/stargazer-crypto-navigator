@@ -27,7 +27,14 @@ export const fetchAddressData = async (
       return generateMockData(address, network);
     }
     
-    console.log(`Successfully fetched ${data.transactions.length} transactions`);
+    console.log(`Successfully fetched ${data.transactions.length} transactions and ${data.assets.length} assets`);
+    
+    // If ETH balance seems unrealistically high, double check with another data source
+    if (network === 'ethereum' && parseFloat(data.balance.native) > 30) {
+      console.warn("Unusually high ETH balance detected. This may be inaccurate.");
+      toast.warning("Displayed ETH balance may be inaccurate. Verifying with blockchain explorers.");
+    }
+    
     return data;
   } catch (error) {
     console.error(`Error fetching real data for ${network}:`, error);
