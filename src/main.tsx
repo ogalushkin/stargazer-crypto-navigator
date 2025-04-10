@@ -21,20 +21,20 @@ const updateFavicon = () => {
   const pngLink = document.createElement('link');
   pngLink.rel = 'icon';
   pngLink.type = 'image/png';
-  pngLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
+  pngLink.href = `src/assets/stargazer-favicon.png?${timestamp}`;
   document.head.appendChild(pngLink);
   
   // Create shortcut icon with versioning
   const shortcutLink = document.createElement('link');
   shortcutLink.rel = 'shortcut icon';
   shortcutLink.type = 'image/png';
-  shortcutLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
+  shortcutLink.href = `src/assets/stargazer-favicon.png?${timestamp}`;
   document.head.appendChild(shortcutLink);
   
   // Create Apple touch icon with versioning
   const appleLink = document.createElement('link');
   appleLink.rel = 'apple-touch-icon';
-  appleLink.href = `/lovable-uploads/995b769b-d1b3-4f22-9f91-e70073e911c4.png?${timestamp}`;
+  appleLink.href = `src/assets/stargazer-favicon.png?${timestamp}`;
   document.head.appendChild(appleLink);
   
   console.log('Favicon updated with unique version at:', new Date().toISOString());
